@@ -50,6 +50,7 @@ class MovimientoIn(BaseModel):
     anio: int = Field(ge=1900, le=2100)
     mes: int | None = Field(default=None, ge=1, le=12)
     cantidad: Decimal = Field(gt=0)
+    comision: Decimal = Field(default=Decimal("0"), ge=0)
 
 
 class MovimientoOut(BaseModel):
@@ -62,6 +63,7 @@ class MovimientoOut(BaseModel):
     anio: int
     mes: int | None
     cantidad: DecimalVisible
+    comision: DecimalVisible
     instrumento_nombre: str | None = None
     corredor_nombre: str | None = None
 
@@ -110,6 +112,36 @@ class PosicionOut(BaseModel):
 class ResumenOut(BaseModel):
     total: DecimalVisible
     posiciones: list[PosicionOut]
+
+
+class ObjetivoIn(BaseModel):
+    instrumento_id: int
+    anio: int = Field(ge=1900, le=2100)
+    mes: int = Field(ge=1, le=12)
+    precio: Decimal = Field(gt=0)
+
+
+class ObjetivoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    instrumento_id: int
+    anio: int
+    mes: int
+    precio: DecimalVisible
+    instrumento_nombre: str | None = None
+
+
+class AvanceObjetivoOut(BaseModel):
+    instrumento_id: int
+    instrumento_nombre: str
+    precio_ultimo: DecimalVisible | None
+    anio_precio: int | None
+    mes_precio: int | None
+    objetivo: DecimalVisible | None
+    anio_objetivo: int | None
+    mes_objetivo: int | None
+    avance_pct: DecimalVisible | None
 
 
 class VariacionPuntoOut(BaseModel):

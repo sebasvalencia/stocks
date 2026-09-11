@@ -20,6 +20,7 @@ def _out(row: Movimiento) -> MovimientoOut:
         anio=row.anio,
         mes=row.mes,
         cantidad=row.cantidad,
+        comision=row.comision,
         instrumento_nombre=row.instrumento.nombre if row.instrumento else None,
         corredor_nombre=row.corredor.nombre if row.corredor else None,
     )
@@ -57,6 +58,7 @@ def crear(body: MovimientoIn, db: Session = Depends(get_db)) -> MovimientoOut:
         anio=body.anio,
         mes=body.mes,
         cantidad=body.cantidad,
+        comision=body.comision,
     )
     db.add(row)
     db.commit()
@@ -84,6 +86,7 @@ def actualizar(
     row.anio = body.anio
     row.mes = body.mes
     row.cantidad = body.cantidad
+    row.comision = body.comision
     db.commit()
     db.refresh(row)
     row = get_movimiento(db, row.id)

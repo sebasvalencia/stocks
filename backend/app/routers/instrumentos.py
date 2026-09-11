@@ -70,5 +70,5 @@ def borrar(instrumento_id: int, db: Session = Depends(get_db)) -> None:
         db.rollback()
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "No se puede borrar: hay movimientos o precios de este título",
+            "No se puede borrar: hay movimientos, precios u objetivos de este título",
         )

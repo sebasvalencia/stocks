@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import corredores, instrumentos, movimientos, precios, resumen
+from app.routers import corredores, instrumentos, movimientos, objetivos, precios, resumen
 
 app = FastAPI(title="Acciones", version="0.1.0")
 
@@ -20,6 +20,7 @@ app.include_router(corredores.router)
 app.include_router(instrumentos.router)
 app.include_router(movimientos.router)
 app.include_router(precios.router)
+app.include_router(objetivos.router)
 app.include_router(resumen.router)
 
 

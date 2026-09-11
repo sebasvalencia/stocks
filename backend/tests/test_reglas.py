@@ -260,3 +260,79 @@ def test_variacion_mes_hueco_no_inventa() -> None:
     puntos2 = puntos_variacion([P(2026, 1, "100"), P(2026, 2, "110")])
     feb = next(p for p in puntos2 if p["mes"] == 2)
     assert feb["variacion_pct"] == Decimal("10")
+
+
+def test_comision_se_guarda_y_no_cambia_total(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    r = client.post(
+        "/movimientos",
+        json={
+            "instrumento_id": eco,
+            "corredor_id": dcor,
+            "tipo": "compra",
+            "anio": 2007,
+            "cantidad": 10,
+            "comision": 12500,
+        },
+    )
+    assert r.status_code == 201
+    assert Decimal(str(r.json()["comision"])) == Decimal("12500")
+    r = client.put(
+        "/precios",
+        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 100},
+    )
+    assert r.status_code == 200
+    res = client.get("/resumen").json()
+    assert Decimal(str(res["total"])) == Decimal("1000")
+
+
+def test_comision_negativa_rechazada(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    r = client.post(
+        "/movimientos",
+        json={
+            "instrumento_id": eco,
+            "corredor_id": dcor,
+            "tipo": "compra",
+            "anio": 2007,
+            "cantidad": 10,
+            "comision": -1,
+        },
+    )
+    assert r.status_code == 422
+
+
+def test_objetivo_historial_y_avance(client: TestClient) -> None:
+    eco, _, _ = _ids(client)
+    r = client.put(
+        "/objetivos",
+        json={"instrumento_id": eco, "anio": 2025, "mes": 1, "precio": 2000},
+    )
+    assert r.status_code == 200
+    r = client.put(
+        "/objetivos",
+        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 3000},
+    )
+    assert r.status_code == 200
+    r = client.put(
+        "/objetivos",
+        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 3100},
+    )
+    assert r.status_code == 200
+    hist = client.get(f"/objetivos?instrumento_id={eco}").json()
+    assert len(hist) == 2
+    assert Decimal(str(hist[0]["precio"])) == Decimal("3100")
+
+    client.put("/precios", json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 2480})
+    av = client.get(f"/avance-objetivo?instrumento_id={eco}").json()
+    assert Decimal(str(av["objetivo"])) == Decimal("3100")
+    assert Decimal(str(av["precio_ultimo"])) == Decimal("2480")
+    assert Decimal(str(av["avance_pct"])) == (Decimal("2480") / Decimal("3100")) * Decimal("100")
+
+
+def test_avance_sin_objetivo_ni_precio(client: TestClient) -> None:
+    eco, _, _ = _ids(client)
+    av = client.get(f"/avance-objetivo?instrumento_id={eco}").json()
+    assert av["objetivo"] is None
+    assert av["precio_ultimo"] is None
+    assert av["avance_pct"] is None

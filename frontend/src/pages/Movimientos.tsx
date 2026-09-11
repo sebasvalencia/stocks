@@ -13,6 +13,7 @@ export default function Movimientos() {
   const [anio, setAnio] = useState("2026");
   const [mes, setMes] = useState("");
   const [cantidad, setCantidad] = useState("");
+  const [comision, setComision] = useState("0");
 
   async function cargar() {
     const [i, c, m] = await Promise.all([api.instrumentos(), api.corredores(), api.movimientos()]);
@@ -33,6 +34,7 @@ export default function Movimientos() {
     setAnio("2026");
     setMes("");
     setCantidad("");
+    setComision("0");
   }
 
   function payload() {
@@ -43,6 +45,7 @@ export default function Movimientos() {
       anio: Number(anio),
       mes: mes === "" ? null : Number(mes),
       cantidad: Number(cantidad),
+      comision: comision === "" ? 0 : Number(comision),
     };
   }
 
@@ -55,6 +58,7 @@ export default function Movimientos() {
     setAnio(String(row.anio));
     setMes(row.mes == null ? "" : String(row.mes));
     setCantidad(String(Number(row.cantidad)));
+    setComision(String(Number(row.comision)));
   }
 
   async function onSubmit(e: FormEvent) {
@@ -179,6 +183,17 @@ export default function Movimientos() {
               required
             />
           </label>
+          <label className="text-sm">
+            Comisión (COP)
+            <input
+              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              type="number"
+              min={0}
+              step="any"
+              value={comision}
+              onChange={(e) => setComision(e.target.value)}
+            />
+          </label>
           <div className="flex gap-2 sm:col-span-3">
             <button className="rounded bg-rust px-4 py-2 text-sm text-white" type="submit">
               {editandoId == null ? "Guardar" : "Guardar cambios"}
@@ -206,6 +221,7 @@ export default function Movimientos() {
               <th>Corredor</th>
               <th>Tipo</th>
               <th className="text-right">Cantidad</th>
+              <th className="text-right">Comisión</th>
               <th className="text-right">Acciones</th>
             </tr>
           </thead>
@@ -218,6 +234,9 @@ export default function Movimientos() {
                 <td>{r.corredor_nombre}</td>
                 <td>{r.tipo}</td>
                 <td className="text-right">{Number(r.cantidad).toLocaleString("es-CO")}</td>
+                <td className="text-right">
+                  {Number(r.comision).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                </td>
                 <td className="space-x-3 text-right">
                   <button type="button" className="text-rust underline" onClick={() => editar(r)}>
                     Editar

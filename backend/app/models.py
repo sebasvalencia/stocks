@@ -33,6 +33,7 @@ class Instrumento(Base):
 
     movimientos: Mapped[list["Movimiento"]] = relationship(back_populates="instrumento")
     precios: Mapped[list["PrecioMensual"]] = relationship(back_populates="instrumento")
+    objetivos: Mapped[list["ObjetivoPrecio"]] = relationship(back_populates="instrumento")
 
 
 class Movimiento(Base):
@@ -40,6 +41,7 @@ class Movimiento(Base):
     __table_args__ = (
         CheckConstraint("tipo IN ('compra', 'venta')", name="ck_movimiento_tipo"),
         CheckConstraint("cantidad > 0", name="ck_movimiento_cantidad"),
+        CheckConstraint("comision >= 0", name="ck_movimiento_comision"),
         CheckConstraint("mes IS NULL OR (mes >= 1 AND mes <= 12)", name="ck_movimiento_mes"),
     )
 
@@ -50,6 +52,9 @@ class Movimiento(Base):
     anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     mes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     cantidad: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    comision: Mapped[Decimal] = mapped_column(
+        Numeric(18, 2), nullable=False, default=Decimal("0")
+    )
 
     instrumento: Mapped[Instrumento] = relationship(back_populates="movimientos")
     corredor: Mapped[Corredor] = relationship(back_populates="movimientos")
@@ -70,3 +75,20 @@ class PrecioMensual(Base):
     precio: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
 
     instrumento: Mapped[Instrumento] = relationship(back_populates="precios")
+
+
+class ObjetivoPrecio(Base):
+    __tablename__ = "objetivo_precio"
+    __table_args__ = (
+        UniqueConstraint("instrumento_id", "anio", "mes", name="uq_objetivo_instrumento_periodo"),
+        CheckConstraint("mes >= 1 AND mes <= 12", name="ck_objetivo_mes"),
+        CheckConstraint("precio > 0", name="ck_objetivo_valor"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    instrumento_id: Mapped[int] = mapped_column(ForeignKey("instrumento.id"), nullable=False)
+    anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    mes: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    precio: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+
+    instrumento: Mapped[Instrumento] = relationship(back_populates="objetivos")

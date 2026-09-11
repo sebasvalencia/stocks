@@ -8,6 +8,7 @@ export type Movimiento = {
   anio: number;
   mes: number | null;
   cantidad: string;
+  comision: string;
   instrumento_nombre: string | null;
   corredor_nombre: string | null;
 };
@@ -40,6 +41,26 @@ export type MovimientoPayload = {
   anio: number;
   mes: number | null;
   cantidad: number;
+  comision: number;
+};
+export type Objetivo = {
+  id: number;
+  instrumento_id: number;
+  anio: number;
+  mes: number;
+  precio: string;
+  instrumento_nombre: string | null;
+};
+export type AvanceObjetivo = {
+  instrumento_id: number;
+  instrumento_nombre: string;
+  precio_ultimo: string | null;
+  anio_precio: number | null;
+  mes_precio: number | null;
+  objetivo: string | null;
+  anio_objetivo: number | null;
+  mes_objetivo: number | null;
+  avance_pct: string | null;
 };
 export type Variacion = {
   instrumento_id: number;
@@ -99,4 +120,10 @@ export const api = {
   resumen: () => req<Resumen>("/resumen"),
   variacion: (instrumentoId: number) =>
     req<Variacion>(`/variacion-precios?instrumento_id=${instrumentoId}`),
+  objetivos: (instrumentoId: number) =>
+    req<Objetivo[]>(`/objetivos?instrumento_id=${instrumentoId}`),
+  upsertObjetivo: (body: { instrumento_id: number; anio: number; mes: number; precio: number }) =>
+    req<Objetivo>("/objetivos", { method: "PUT", body: JSON.stringify(body) }),
+  avanceObjetivo: (instrumentoId: number) =>
+    req<AvanceObjetivo>(`/avance-objetivo?instrumento_id=${instrumentoId}`),
 };
