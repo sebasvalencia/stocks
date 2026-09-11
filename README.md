@@ -11,6 +11,7 @@ No hay login, no hay API de mercado ni importación de Excel. El precio pagado e
 - **Compras y ventas** por par título + corredor (año obligatorio, mes opcional, cantidad > 0, **comisión en COP** ≥ 0).
 - **Saldo calculado**: `compras − ventas` por corredor. Venta parcial baja el saldo; venta total lo deja en 0; venta mayor al saldo se rechaza. No hay saldo negativo.
 - **Precios mensuales** por título (no por corredor), en una grilla año × mes.
+- **Aviso de precios del mes**: si a un título activo le falta el precio del mes en curso, Resumen y Precios muestran un banner. En Precios, esas celdas se marcan. El mes lo toma el navegador (no el reloj UTC del contenedor).
 - **Precio objetivo de venta** por título, un valor por mes. El historial se conserva; el vigente es el de fecha más reciente. Mismo mes = se actualiza.
 - **Resumen**: total actual = Σ (`saldo × último precio`) solo de títulos **activos**. Si falta precio, la posición se marca “sin precio” y no entra al total.
 - **Gráficas**: peso % del portafolio (torta), variación % mensual del precio (línea) y **avance al objetivo** (`último mercado / objetivo vigente`). Un mes hueco no inventa variación ni avance.
@@ -31,6 +32,7 @@ No hay login, no hay API de mercado ni importación de Excel. El precio pagado e
 | Variación de un mes                                    | Solo si existe precio en ese mes **y** en el mes calendario anterior |
 | Comisión                                               | COP ≥ 0 en cada compra/venta; no entra al total                      |
 | Avance al objetivo                                     | Solo si hay precio de mercado **y** objetivo vigente                 |
+| Precios pendientes del mes                             | Solo títulos **activos** sin celda en el mes en curso                |
 
 
 Moneda: **COP**. No hay conversión.
@@ -49,7 +51,7 @@ flowchart LR
 
 
 
-Flujo típico: dar de alta título y corredor → registrar compras (con comisión) → cargar precios del mes → fijar objetivo de venta → ver total, peso %, variación y avance en Resumen.
+Flujo típico: dar de alta título y corredor → registrar compras (con comisión) → si el banner avisa, cargar precios del mes → fijar objetivo de venta → ver total, peso %, variación y avance en Resumen.
 
 ```mermaid
 sequenceDiagram
@@ -183,7 +185,7 @@ cd backend
 python -m pytest
 ```
 
-Los tests usan SQLite en memoria (no hace falta Postgres) y cubren salud, seed, ventas, inactivación, resumen, variación, comisión y avance al objetivo.
+Los tests usan SQLite en memoria (no hace falta Postgres) y cubren salud, seed, ventas, inactivación, resumen, variación, comisión, avance al objetivo y precios pendientes.
 
 ## Scan de seguridad (Semgrep)
 
@@ -268,6 +270,7 @@ acciones/
     │   ├── main.tsx
     │   ├── App.tsx              # rutas
     │   ├── api.ts               # cliente HTTP
+    │   ├── BannerPrecios.tsx    # aviso de huecos del mes en curso
     │   └── pages/               # Resumen, Precios, Movimientos, Catalogo
     └── ...
 ```
@@ -277,8 +280,8 @@ Pantallas:
 
 | Ruta           | Pantalla                                  |
 | -------------- | ----------------------------------------- |
-| `/`            | Total, posiciones, peso %, variación %, avance al objetivo |
-| `/precios`     | Grilla mes × título                                        |
+| `/`            | Total, posiciones, peso %, variación %, avance; banner si faltan precios del mes |
+| `/precios`     | Grilla mes × título; banner y celdas ámbar del mes en curso                      |
 | `/movimientos` | Alta, edición y borrado de compras/ventas (con comisión)   |
 | `/catalogo`    | Títulos, corredores, activar/inactivar    |
 
@@ -295,6 +298,7 @@ Pantallas:
 | CRUD             | `/instrumentos`                      | Incluye `activo`; inactivar valida saldo 0        |
 | CRUD             | `/movimientos`                       | Valida saldo en ventas y título activo en compras; `comision` ≥ 0 |
 | GET, PUT, DELETE | `/precios`                           | PUT es upsert por título + año + mes                              |
+| GET              | `/precios/pendientes?anio=&mes=`     | Títulos activos sin precio en ese periodo                         |
 | GET, PUT, DELETE | `/objetivos`                         | PUT es upsert por título + año + mes; historial por título        |
 | GET              | `/avance-objetivo?instrumento_id=`   | `null` si falta mercado u objetivo vigente                        |
 | GET              | `/saldos`                            | Calculado; no se persiste                                         |

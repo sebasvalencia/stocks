@@ -1,15 +1,18 @@
 import { FormEvent, useEffect, useState } from "react";
+import BannerPrecios, { mesCurso } from "../BannerPrecios";
 import { api, type Instrumento, type Precio } from "../api";
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 export default function Precios() {
-  const [anio, setAnio] = useState(2026);
+  const curso = mesCurso();
+  const [anio, setAnio] = useState(curso.anio);
   const [instrumentos, setInstrumentos] = useState<Instrumento[]>([]);
   const [precios, setPrecios] = useState<Precio[]>([]);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [aviso, setAviso] = useState(0);
 
   async function cargar(y: number) {
     const [i, p] = await Promise.all([api.instrumentos(), api.precios(y)]);
@@ -47,6 +50,7 @@ export default function Precios() {
       }
       setDraft({});
       await cargar(anio);
+      setAviso((n) => n + 1);
       setOk("Precios guardados");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error");
@@ -55,6 +59,7 @@ export default function Precios() {
 
   return (
     <form onSubmit={guardar} className="space-y-4">
+      <BannerPrecios recargar={aviso} />
       {error && (
         <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
       )}
@@ -78,8 +83,13 @@ export default function Precios() {
           <thead>
             <tr className="border-b">
               <th className="py-2 pr-2">Título</th>
-              {MESES.map((m) => (
-                <th key={m} className="px-1 text-center">
+              {MESES.map((m, idx) => (
+                <th
+                  key={m}
+                  className={`px-1 text-center ${
+                    anio === curso.anio && idx + 1 === curso.mes ? "text-rust" : ""
+                  }`}
+                >
                   {m}
                 </th>
               ))}
@@ -92,10 +102,14 @@ export default function Precios() {
                 {MESES.map((_, idx) => {
                   const mes = idx + 1;
                   const key = `${inst.id}-${mes}`;
+                  const huecoMes =
+                    inst.activo && anio === curso.anio && mes === curso.mes && valor(inst.id, mes) === "";
                   return (
                     <td key={mes}>
                       <input
-                        className="w-20 rounded border border-ink/15 px-1 py-1 text-right"
+                        className={`w-20 rounded border px-1 py-1 text-right ${
+                          huecoMes ? "border-amber-400 bg-amber-50" : "border-ink/15"
+                        }`}
                         value={valor(inst.id, mes)}
                         onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
                         inputMode="decimal"

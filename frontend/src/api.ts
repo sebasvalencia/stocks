@@ -12,6 +12,13 @@ export type Movimiento = {
   instrumento_nombre: string | null;
   corredor_nombre: string | null;
 };
+export type PreciosPendientes = {
+  anio: number;
+  mes: number;
+  total_activos: number;
+  pendientes: number;
+  faltantes: { instrumento_id: number; instrumento_nombre: string }[];
+};
 export type Precio = {
   id: number;
   instrumento_id: number;
@@ -117,6 +124,8 @@ export const api = {
   precios: (anio?: number) => req<Precio[]>(anio ? `/precios?anio=${anio}` : "/precios"),
   upsertPrecio: (body: { instrumento_id: number; anio: number; mes: number; precio: number }) =>
     req<Precio>("/precios", { method: "PUT", body: JSON.stringify(body) }),
+  preciosPendientes: (anio: number, mes: number) =>
+    req<PreciosPendientes>(`/precios/pendientes?anio=${anio}&mes=${mes}`),
   resumen: () => req<Resumen>("/resumen"),
   variacion: (instrumentoId: number) =>
     req<Variacion>(`/variacion-precios?instrumento_id=${instrumentoId}`),

@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import BannerPrecios from "../BannerPrecios";
 import { api, type AvanceObjetivo, type Instrumento, type Objetivo, type Resumen, type Variacion } from "../api";
 
 const COLORS = ["#c45c26", "#3d5a45", "#1c1915", "#8b6914", "#6b3fa0", "#2b6cb0", "#9b2c2c"];
@@ -130,6 +131,7 @@ export default function ResumenPage() {
 
   return (
     <div className="space-y-6">
+      <BannerPrecios enlace />
       {error && (
         <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
       )}

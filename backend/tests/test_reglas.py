@@ -336,3 +336,22 @@ def test_avance_sin_objetivo_ni_precio(client: TestClient) -> None:
     assert av["objetivo"] is None
     assert av["precio_ultimo"] is None
     assert av["avance_pct"] is None
+
+
+def test_precios_pendientes_solo_activos_sin_precio(client: TestClient) -> None:
+    inst = {r["nombre"]: r for r in client.get("/instrumentos").json()}
+    eco = inst["Ecopetrol"]["id"]
+    celsia = inst["Celsia"]["id"]
+    r = client.get("/precios/pendientes", params={"anio": 2026, "mes": 9})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total_activos"] == 11
+    assert body["pendientes"] == 11
+    client.put("/precios", json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 2645})
+    client.put(f"/instrumentos/{celsia}", json={"activo": False})
+    body = client.get("/precios/pendientes", params={"anio": 2026, "mes": 9}).json()
+    nombres = {f["instrumento_nombre"] for f in body["faltantes"]}
+    assert "Ecopetrol" not in nombres
+    assert "Celsia" not in nombres
+    assert body["total_activos"] == 10
+    assert body["pendientes"] == 9

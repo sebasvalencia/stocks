@@ -86,6 +86,19 @@ class PrecioOut(BaseModel):
     instrumento_nombre: str | None = None
 
 
+class PrecioFaltanteOut(BaseModel):
+    instrumento_id: int
+    instrumento_nombre: str
+
+
+class PreciosPendientesOut(BaseModel):
+    anio: int
+    mes: int
+    total_activos: int
+    pendientes: int
+    faltantes: list[PrecioFaltanteOut]
+
+
 class SaldoOut(BaseModel):
     instrumento_id: int
     instrumento_nombre: str

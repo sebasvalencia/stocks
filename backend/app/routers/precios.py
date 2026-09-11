@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import Instrumento, PrecioMensual
-from app.schemas import PrecioIn, PrecioOut
+from app.schemas import PrecioFaltanteOut, PrecioIn, PrecioOut, PreciosPendientesOut
 
 router = APIRouter(prefix="/precios", tags=["precios"])
 
@@ -17,6 +17,35 @@ def _out(row: PrecioMensual) -> PrecioOut:
         mes=row.mes,
         precio=row.precio,
         instrumento_nombre=row.instrumento.nombre if row.instrumento else None,
+    )
+
+
+@router.get("/pendientes", response_model=PreciosPendientesOut)
+def pendientes(
+    anio: int = Query(..., ge=1900, le=2100),
+    mes: int = Query(..., ge=1, le=12),
+    db: Session = Depends(get_db),
+) -> PreciosPendientesOut:
+    activos = list(
+        db.scalars(select(Instrumento).where(Instrumento.activo.is_(True)).order_by(Instrumento.nombre)).all()
+    )
+    con_precio = {
+        row.instrumento_id
+        for row in db.scalars(
+            select(PrecioMensual).where(PrecioMensual.anio == anio, PrecioMensual.mes == mes)
+        ).all()
+    }
+    faltantes = [
+        PrecioFaltanteOut(instrumento_id=i.id, instrumento_nombre=i.nombre)
+        for i in activos
+        if i.id not in con_precio
+    ]
+    return PreciosPendientesOut(
+        anio=anio,
+        mes=mes,
+        total_activos=len(activos),
+        pendientes=len(faltantes),
+        faltantes=faltantes,
     )
 
 
