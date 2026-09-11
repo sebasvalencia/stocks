@@ -88,7 +88,7 @@ Al arrancar el contenedor `api` se ejecuta la migración Alembic, el seed del ca
 | Capa         | Tecnología                                                             |
 | ------------ | ---------------------------------------------------------------------- |
 | UI           | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7, Recharts |
-| API          | Python 3.12, FastAPI, Pydantic v2, Uvicorn                             |
+| API          | Python 3.12, FastAPI, Pydantic v2, Uvicorn, **uv**                     |
 | Persistencia | PostgreSQL 16, SQLAlchemy 2, Alembic                                   |
 | Pruebas      | pytest, httpx (`TestClient`)                                           |
 | Empaquetado  | Docker Compose (servicios `db`, `api`, `web`)                          |
@@ -158,14 +158,12 @@ PostgreSQL 16, Python 3.12 y Node 22.
 ```bash
 # API
 cd backend
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/macOS: source .venv/bin/activate
-pip install -r requirements.txt
-# Lee POSTGRES_* o DATABASE_URL desde ../.env
-alembic upgrade head
-python -m app.seed
-uvicorn app.main:app --reload --port 8000
+uv sync --group dev
+# uv usa Python 3.12 (igual que Docker), no el 3.14 del sistema
+# Lee DATABASE_URL desde ../.env
+uv run alembic upgrade head
+uv run python -m app.seed
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
 ```bash
@@ -182,7 +180,7 @@ npm run dev
 
 ```bash
 cd backend
-python -m pytest
+uv run pytest
 ```
 
 Los tests usan SQLite en memoria (no hace falta Postgres) y cubren salud, seed, ventas, inactivación, resumen, variación, comisión, avance al objetivo y precios pendientes.
@@ -251,7 +249,8 @@ acciones/
 ├── pgadmin/servers.json
 ├── backend/
 │   ├── Dockerfile
-│   ├── requirements.txt
+│   ├── pyproject.toml
+│   ├── uv.lock
 │   ├── alembic.ini
 │   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo
 │   ├── app/
