@@ -1,8 +1,15 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+psycopg://acciones:acciones@localhost:5432/acciones"
+    """Mapea DATABASE_URL del entorno. Sin default: en un servidor cambia."""
+
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env"),
+        extra="ignore",
+    )
+
+    database_url: str
 
 
 settings = Settings()
