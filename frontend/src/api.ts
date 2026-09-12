@@ -1,83 +1,91 @@
-export type Corredor = { id: number; nombre: string };
-export type Instrumento = { id: number; nombre: string; activo: boolean };
-export type Movimiento = {
+import { translateApiError } from "./apiErrors";
+
+export type Broker = { id: number; name: string };
+export type Instrument = { id: number; name: string; active: boolean };
+export type Trade = {
   id: number;
-  instrumento_id: number;
-  corredor_id: number;
-  tipo: "compra" | "venta";
-  anio: number;
-  mes: number | null;
-  cantidad: string;
-  comision: string;
-  instrumento_nombre: string | null;
-  corredor_nombre: string | null;
+  instrument_id: number;
+  broker_id: number;
+  type: "buy" | "sell";
+  year: number;
+  month: number | null;
+  quantity: string;
+  commission: string;
+  instrument_name: string | null;
+  broker_name: string | null;
 };
-export type PreciosPendientes = {
-  anio: number;
-  mes: number;
-  total_activos: number;
-  pendientes: number;
-  faltantes: { instrumento_id: number; instrumento_nombre: string }[];
+export type PendingPrices = {
+  year: number;
+  month: number;
+  total_active: number;
+  pending: number;
+  missing: { instrument_id: number; instrument_name: string }[];
 };
-export type Precio = {
+export type Price = {
   id: number;
-  instrumento_id: number;
-  anio: number;
-  mes: number;
-  precio: string;
-  instrumento_nombre: string | null;
+  instrument_id: number;
+  year: number;
+  month: number;
+  price: string;
+  instrument_name: string | null;
 };
-export type Posicion = {
-  instrumento_id: number;
-  instrumento_nombre: string;
-  corredor_id: number;
-  corredor_nombre: string;
-  saldo: string;
-  precio_ultimo: string | null;
-  anio_precio: number | null;
-  mes_precio: number | null;
-  valor: string | null;
-  peso_pct: string | null;
-  sin_precio: boolean;
+export type Position = {
+  instrument_id: number;
+  instrument_name: string;
+  broker_id: number;
+  broker_name: string;
+  balance: string;
+  last_price: string | null;
+  price_year: number | null;
+  price_month: number | null;
+  value: string | null;
+  weight_pct: string | null;
+  missing_price: boolean;
 };
-export type Resumen = { total: string; posiciones: Posicion[] };
-export type MovimientoPayload = {
-  instrumento_id: number;
-  corredor_id: number;
-  tipo: "compra" | "venta";
-  anio: number;
-  mes: number | null;
-  cantidad: number;
-  comision: number;
+export type Summary = { total: string; positions: Position[] };
+export type TradePayload = {
+  instrument_id: number;
+  broker_id: number;
+  type: "buy" | "sell";
+  year: number;
+  month: number | null;
+  quantity: number;
+  commission: number;
 };
-export type Objetivo = {
+export type Target = {
   id: number;
-  instrumento_id: number;
-  anio: number;
-  mes: number;
-  precio: string;
-  instrumento_nombre: string | null;
+  instrument_id: number;
+  year: number;
+  month: number;
+  price: string;
+  instrument_name: string | null;
 };
-export type AvanceObjetivo = {
-  instrumento_id: number;
-  instrumento_nombre: string;
-  precio_ultimo: string | null;
-  anio_precio: number | null;
-  mes_precio: number | null;
-  objetivo: string | null;
-  anio_objetivo: number | null;
-  mes_objetivo: number | null;
-  avance_pct: string | null;
+export type TargetProgress = {
+  instrument_id: number;
+  instrument_name: string;
+  last_price: string | null;
+  price_year: number | null;
+  price_month: number | null;
+  target: string | null;
+  target_year: number | null;
+  target_month: number | null;
+  progress_pct: string | null;
 };
-export type Variacion = {
-  instrumento_id: number;
-  instrumento_nombre: string;
-  puntos: {
-    anio: number;
-    mes: number;
-    precio: string;
-    variacion_pct: string | null;
+export type Variation = {
+  instrument_id: number;
+  instrument_name: string;
+  points: {
+    year: number;
+    month: number;
+    price: string;
+    variation_pct: string | null;
   }[];
+};
+export type FxRate = {
+  id: number;
+  year: number;
+  month: number;
+  cop_per_usd: string;
 };
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -94,7 +102,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     let msg = res.statusText;
     try {
       const body = await res.json();
-      if (typeof body.detail === "string") msg = body.detail;
+      if (typeof body.detail === "string") msg = translateApiError(body.detail);
       else if (Array.isArray(body.detail)) msg = body.detail.map((d: { msg?: string }) => d.msg).join("; ");
     } catch {
       /* keep statusText */
@@ -107,32 +115,34 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => req<{ status: string }>("/health"),
-  corredores: () => req<Corredor[]>("/corredores"),
-  crearCorredor: (nombre: string) =>
-    req<Corredor>("/corredores", { method: "POST", body: JSON.stringify({ nombre }) }),
-  instrumentos: () => req<Instrumento[]>("/instrumentos"),
-  crearInstrumento: (nombre: string) =>
-    req<Instrumento>("/instrumentos", { method: "POST", body: JSON.stringify({ nombre, activo: true }) }),
-  patchInstrumento: (id: number, body: { activo?: boolean; nombre?: string }) =>
-    req<Instrumento>(`/instrumentos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  movimientos: () => req<Movimiento[]>("/movimientos"),
-  crearMovimiento: (body: MovimientoPayload) =>
-    req<Movimiento>("/movimientos", { method: "POST", body: JSON.stringify(body) }),
-  actualizarMovimiento: (id: number, body: MovimientoPayload) =>
-    req<Movimiento>(`/movimientos/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  borrarMovimiento: (id: number) => req<void>(`/movimientos/${id}`, { method: "DELETE" }),
-  precios: (anio?: number) => req<Precio[]>(anio ? `/precios?anio=${anio}` : "/precios"),
-  upsertPrecio: (body: { instrumento_id: number; anio: number; mes: number; precio: number }) =>
-    req<Precio>("/precios", { method: "PUT", body: JSON.stringify(body) }),
-  preciosPendientes: (anio: number, mes: number) =>
-    req<PreciosPendientes>(`/precios/pendientes?anio=${anio}&mes=${mes}`),
-  resumen: () => req<Resumen>("/resumen"),
-  variacion: (instrumentoId: number) =>
-    req<Variacion>(`/variacion-precios?instrumento_id=${instrumentoId}`),
-  objetivos: (instrumentoId: number) =>
-    req<Objetivo[]>(`/objetivos?instrumento_id=${instrumentoId}`),
-  upsertObjetivo: (body: { instrumento_id: number; anio: number; mes: number; precio: number }) =>
-    req<Objetivo>("/objetivos", { method: "PUT", body: JSON.stringify(body) }),
-  avanceObjetivo: (instrumentoId: number) =>
-    req<AvanceObjetivo>(`/avance-objetivo?instrumento_id=${instrumentoId}`),
+  brokers: () => req<Broker[]>("/brokers"),
+  createBroker: (name: string) =>
+    req<Broker>("/brokers", { method: "POST", body: JSON.stringify({ name }) }),
+  instruments: () => req<Instrument[]>("/instruments"),
+  createInstrument: (name: string) =>
+    req<Instrument>("/instruments", { method: "POST", body: JSON.stringify({ name, active: true }) }),
+  patchInstrument: (id: number, body: { active?: boolean; name?: string }) =>
+    req<Instrument>(`/instruments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  trades: () => req<Trade[]>("/trades"),
+  createTrade: (body: TradePayload) =>
+    req<Trade>("/trades", { method: "POST", body: JSON.stringify(body) }),
+  updateTrade: (id: number, body: TradePayload) =>
+    req<Trade>(`/trades/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteTrade: (id: number) => req<void>(`/trades/${id}`, { method: "DELETE" }),
+  prices: (year?: number) => req<Price[]>(year ? `/prices?year=${year}` : "/prices"),
+  upsertPrice: (body: { instrument_id: number; year: number; month: number; price: number }) =>
+    req<Price>("/prices", { method: "PUT", body: JSON.stringify(body) }),
+  pendingPrices: (year: number, month: number) =>
+    req<PendingPrices>(`/prices/pending?year=${year}&month=${month}`),
+  summary: () => req<Summary>("/summary"),
+  variation: (instrumentId: number) =>
+    req<Variation>(`/price-variation?instrument_id=${instrumentId}`),
+  targets: (instrumentId: number) => req<Target[]>(`/targets?instrument_id=${instrumentId}`),
+  upsertTarget: (body: { instrument_id: number; year: number; month: number; price: number }) =>
+    req<Target>("/targets", { method: "PUT", body: JSON.stringify(body) }),
+  targetProgress: (instrumentId: number) =>
+    req<TargetProgress>(`/target-progress?instrument_id=${instrumentId}`),
+  fxRates: (year?: number) => req<FxRate[]>(year ? `/fx-rates?year=${year}` : "/fx-rates"),
+  upsertFxRate: (body: { year: number; month: number; cop_per_usd: number }) =>
+    req<FxRate>("/fx-rates", { method: "PUT", body: JSON.stringify(body) }),
 };

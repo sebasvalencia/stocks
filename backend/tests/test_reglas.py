@@ -2,12 +2,12 @@ from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
-from app.services.variacion import puntos_variacion
+from app.services.variation import variation_points
 
 
 def _ids(client: TestClient) -> tuple[int, int, int]:
-    inst = {r["nombre"]: r["id"] for r in client.get("/instrumentos").json()}
-    corr = {r["nombre"]: r["id"] for r in client.get("/corredores").json()}
+    inst = {r["name"]: r["id"] for r in client.get("/instruments").json()}
+    corr = {r["name"]: r["id"] for r in client.get("/brokers").json()}
     return inst["Ecopetrol"], corr["D Corredores"], corr["Trii"]
 
 
@@ -15,343 +15,364 @@ def test_health(client: TestClient) -> None:
     assert client.get("/health").json() == {"status": "ok"}
 
 
-def test_seed_catalogo(client: TestClient) -> None:
-    inst = client.get("/instrumentos").json()
-    corr = client.get("/corredores").json()
+def test_seed_catalog(client: TestClient) -> None:
+    inst = client.get("/instruments").json()
+    corr = client.get("/brokers").json()
     assert len(inst) == 11
-    assert {c["nombre"] for c in corr} == {"D Corredores", "Trii"}
-    assert "IBITCO" not in {i["nombre"] for i in inst}
+    assert {c["name"] for c in corr} == {"D Corredores", "Trii"}
+    assert "IBITCO" not in {i["name"] for i in inst}
 
 
-def test_venta_parcial_total_y_exceso(client: TestClient) -> None:
+def test_partial_full_and_excess_sell(client: TestClient) -> None:
     eco, dcor, _ = _ids(client)
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
         },
     )
     assert r.status_code == 201
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "venta",
-            "anio": 2025,
-            "mes": 3,
-            "cantidad": 500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "month": 3,
+            "quantity": 500,
         },
     )
     assert r.status_code == 201
-    saldos = client.get("/saldos").json()
-    eco_d = next(s for s in saldos if s["corredor_nombre"] == "D Corredores")
-    assert Decimal(str(eco_d["saldo"])) == Decimal("1000")
+    balances = client.get("/balances").json()
+    eco_d = next(s for s in balances if s["broker_name"] == "D Corredores")
+    assert Decimal(str(eco_d["balance"])) == Decimal("1000")
 
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "venta",
-            "anio": 2025,
-            "cantidad": 1000,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 1000,
         },
     )
     assert r.status_code == 201
-    saldos = client.get("/saldos").json()
-    eco_d = next(s for s in saldos if s["corredor_nombre"] == "D Corredores")
-    assert Decimal(str(eco_d["saldo"])) == Decimal("0")
+    balances = client.get("/balances").json()
+    eco_d = next(s for s in balances if s["broker_name"] == "D Corredores")
+    assert Decimal(str(eco_d["balance"])) == Decimal("0")
 
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "venta",
-            "anio": 2025,
-            "cantidad": 1,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 1,
         },
     )
     assert r.status_code == 400
+    assert r.json()["detail"] == "sell_exceeds_balance"
 
 
-def test_venta_no_toca_otro_corredor(client: TestClient) -> None:
+def test_sell_does_not_touch_other_broker(client: TestClient) -> None:
     eco, dcor, trii = _ids(client)
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
         },
     )
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": trii,
-            "tipo": "compra",
-            "anio": 2025,
-            "cantidad": 447,
+            "instrument_id": eco,
+            "broker_id": trii,
+            "type": "buy",
+            "year": 2025,
+            "quantity": 447,
         },
     )
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": trii,
-            "tipo": "venta",
-            "anio": 2025,
-            "cantidad": 447,
+            "instrument_id": eco,
+            "broker_id": trii,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 447,
         },
     )
-    saldos = {s["corredor_nombre"]: s["saldo"] for s in client.get("/saldos").json()}
-    assert Decimal(str(saldos["D Corredores"])) == Decimal("1500")
-    assert Decimal(str(saldos["Trii"])) == Decimal("0")
+    balances = {s["broker_name"]: s["balance"] for s in client.get("/balances").json()}
+    assert Decimal(str(balances["D Corredores"])) == Decimal("1500")
+    assert Decimal(str(balances["Trii"])) == Decimal("0")
 
 
-def test_inactivar_solo_saldo_cero(client: TestClient) -> None:
+def test_inactivate_only_when_balance_zero(client: TestClient) -> None:
     eco, dcor, _ = _ids(client)
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
         },
     )
-    r = client.put(f"/instrumentos/{eco}", json={"activo": False})
+    r = client.put(f"/instruments/{eco}", json={"active": False})
     assert r.status_code == 400
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "venta",
-            "anio": 2025,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2025,
+            "quantity": 1500,
         },
     )
-    r = client.put(f"/instrumentos/{eco}", json={"activo": False})
+    r = client.put(f"/instruments/{eco}", json={"active": False})
     assert r.status_code == 200
-    assert r.json()["activo"] is False
+    assert r.json()["active"] is False
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2026,
-            "cantidad": 10,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2026,
+            "quantity": 10,
         },
     )
     assert r.status_code == 400
-    r = client.put(f"/instrumentos/{eco}", json={"activo": True})
+    r = client.put(f"/instruments/{eco}", json={"active": True})
     assert r.status_code == 200
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2026,
-            "cantidad": 10,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2026,
+            "quantity": 10,
         },
     )
     assert r.status_code == 201
 
 
-def test_resumen_cantidad_por_precio_y_inactivo_fuera(client: TestClient) -> None:
+def test_summary_qty_times_price_and_inactive_out(client: TestClient) -> None:
     eco, dcor, trii = _ids(client)
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
         },
     )
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": trii,
-            "tipo": "compra",
-            "anio": 2025,
-            "cantidad": 447,
+            "instrument_id": eco,
+            "broker_id": trii,
+            "type": "buy",
+            "year": 2025,
+            "quantity": 447,
         },
     )
     r = client.put(
-        "/precios",
-        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 2645},
+        "/prices",
+        json={"instrument_id": eco, "year": 2026, "month": 9, "price": 2645},
     )
     assert r.status_code == 200
-    res = client.get("/resumen").json()
+    res = client.get("/summary").json()
     assert Decimal(str(res["total"])) == Decimal("1500") * Decimal("2645") + Decimal("447") * Decimal(
         "2645"
     )
-    assert len(res["posiciones"]) == 2
+    assert len(res["positions"]) == 2
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": trii,
-            "tipo": "venta",
-            "anio": 2026,
-            "cantidad": 447,
+            "instrument_id": eco,
+            "broker_id": trii,
+            "type": "sell",
+            "year": 2026,
+            "quantity": 447,
         },
     )
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "venta",
-            "anio": 2026,
-            "cantidad": 1500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "sell",
+            "year": 2026,
+            "quantity": 1500,
         },
     )
-    client.put(f"/instrumentos/{eco}", json={"activo": False})
-    res = client.get("/resumen").json()
+    client.put(f"/instruments/{eco}", json={"active": False})
+    res = client.get("/summary").json()
     assert Decimal(str(res["total"])) == Decimal("0")
-    assert res["posiciones"] == []
+    assert res["positions"] == []
 
 
-def test_sin_precio_no_suma(client: TestClient) -> None:
+def test_missing_price_does_not_sum(client: TestClient) -> None:
     eco, dcor, _ = _ids(client)
     client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 10,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
         },
     )
-    res = client.get("/resumen").json()
+    res = client.get("/summary").json()
     assert Decimal(str(res["total"])) == Decimal("0")
-    assert res["posiciones"][0]["sin_precio"] is True
+    assert res["positions"][0]["missing_price"] is True
 
 
-def test_variacion_mes_hueco_no_inventa() -> None:
+def test_variation_gap_is_not_invented() -> None:
     class P:
-        def __init__(self, anio: int, mes: int, precio: str) -> None:
-            self.anio = anio
-            self.mes = mes
-            self.precio = Decimal(precio)
+        def __init__(self, year: int, month: int, price: str) -> None:
+            self.year = year
+            self.month = month
+            self.price = Decimal(price)
 
-    puntos = puntos_variacion([P(2026, 1, "100"), P(2026, 3, "110")])
-    ene = next(p for p in puntos if p["mes"] == 1)
-    mar = next(p for p in puntos if p["mes"] == 3)
-    assert ene["variacion_pct"] is None
-    assert mar["variacion_pct"] is None
-    puntos2 = puntos_variacion([P(2026, 1, "100"), P(2026, 2, "110")])
-    feb = next(p for p in puntos2 if p["mes"] == 2)
-    assert feb["variacion_pct"] == Decimal("10")
+    points = variation_points([P(2026, 1, "100"), P(2026, 3, "110")])
+    jan = next(p for p in points if p["month"] == 1)
+    mar = next(p for p in points if p["month"] == 3)
+    assert jan["variation_pct"] is None
+    assert mar["variation_pct"] is None
+    points2 = variation_points([P(2026, 1, "100"), P(2026, 2, "110")])
+    feb = next(p for p in points2 if p["month"] == 2)
+    assert feb["variation_pct"] == Decimal("10")
 
 
-def test_comision_se_guarda_y_no_cambia_total(client: TestClient) -> None:
+def test_commission_is_stored_and_does_not_change_total(client: TestClient) -> None:
     eco, dcor, _ = _ids(client)
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 10,
-            "comision": 12500,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+            "commission": 12500,
         },
     )
     assert r.status_code == 201
-    assert Decimal(str(r.json()["comision"])) == Decimal("12500")
+    assert Decimal(str(r.json()["commission"])) == Decimal("12500")
     r = client.put(
-        "/precios",
-        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 100},
+        "/prices",
+        json={"instrument_id": eco, "year": 2026, "month": 9, "price": 100},
     )
     assert r.status_code == 200
-    res = client.get("/resumen").json()
+    res = client.get("/summary").json()
     assert Decimal(str(res["total"])) == Decimal("1000")
 
 
-def test_comision_negativa_rechazada(client: TestClient) -> None:
+def test_negative_commission_rejected(client: TestClient) -> None:
     eco, dcor, _ = _ids(client)
     r = client.post(
-        "/movimientos",
+        "/trades",
         json={
-            "instrumento_id": eco,
-            "corredor_id": dcor,
-            "tipo": "compra",
-            "anio": 2007,
-            "cantidad": 10,
-            "comision": -1,
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+            "commission": -1,
         },
     )
     assert r.status_code == 422
 
 
-def test_objetivo_historial_y_avance(client: TestClient) -> None:
+def test_target_history_and_progress(client: TestClient) -> None:
     eco, _, _ = _ids(client)
     r = client.put(
-        "/objetivos",
-        json={"instrumento_id": eco, "anio": 2025, "mes": 1, "precio": 2000},
+        "/targets",
+        json={"instrument_id": eco, "year": 2025, "month": 1, "price": 2000},
     )
     assert r.status_code == 200
     r = client.put(
-        "/objetivos",
-        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 3000},
+        "/targets",
+        json={"instrument_id": eco, "year": 2026, "month": 9, "price": 3000},
     )
     assert r.status_code == 200
     r = client.put(
-        "/objetivos",
-        json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 3100},
+        "/targets",
+        json={"instrument_id": eco, "year": 2026, "month": 9, "price": 3100},
     )
     assert r.status_code == 200
-    hist = client.get(f"/objetivos?instrumento_id={eco}").json()
+    hist = client.get(f"/targets?instrument_id={eco}").json()
     assert len(hist) == 2
-    assert Decimal(str(hist[0]["precio"])) == Decimal("3100")
+    assert Decimal(str(hist[0]["price"])) == Decimal("3100")
 
-    client.put("/precios", json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 2480})
-    av = client.get(f"/avance-objetivo?instrumento_id={eco}").json()
-    assert Decimal(str(av["objetivo"])) == Decimal("3100")
-    assert Decimal(str(av["precio_ultimo"])) == Decimal("2480")
-    assert Decimal(str(av["avance_pct"])) == (Decimal("2480") / Decimal("3100")) * Decimal("100")
+    client.put("/prices", json={"instrument_id": eco, "year": 2026, "month": 9, "price": 2480})
+    av = client.get(f"/target-progress?instrument_id={eco}").json()
+    assert Decimal(str(av["target"])) == Decimal("3100")
+    assert Decimal(str(av["last_price"])) == Decimal("2480")
+    assert Decimal(str(av["progress_pct"])) == (Decimal("2480") / Decimal("3100")) * Decimal("100")
 
 
-def test_avance_sin_objetivo_ni_precio(client: TestClient) -> None:
+def test_progress_without_target_or_price(client: TestClient) -> None:
     eco, _, _ = _ids(client)
-    av = client.get(f"/avance-objetivo?instrumento_id={eco}").json()
-    assert av["objetivo"] is None
-    assert av["precio_ultimo"] is None
-    assert av["avance_pct"] is None
+    av = client.get(f"/target-progress?instrument_id={eco}").json()
+    assert av["target"] is None
+    assert av["last_price"] is None
+    assert av["progress_pct"] is None
 
 
-def test_precios_pendientes_solo_activos_sin_precio(client: TestClient) -> None:
-    inst = {r["nombre"]: r for r in client.get("/instrumentos").json()}
+def test_pending_prices_only_active_without_price(client: TestClient) -> None:
+    inst = {r["name"]: r for r in client.get("/instruments").json()}
     eco = inst["Ecopetrol"]["id"]
     celsia = inst["Celsia"]["id"]
-    r = client.get("/precios/pendientes", params={"anio": 2026, "mes": 9})
+    r = client.get("/prices/pending", params={"year": 2026, "month": 9})
     assert r.status_code == 200
     body = r.json()
-    assert body["total_activos"] == 11
-    assert body["pendientes"] == 11
-    client.put("/precios", json={"instrumento_id": eco, "anio": 2026, "mes": 9, "precio": 2645})
-    client.put(f"/instrumentos/{celsia}", json={"activo": False})
-    body = client.get("/precios/pendientes", params={"anio": 2026, "mes": 9}).json()
-    nombres = {f["instrumento_nombre"] for f in body["faltantes"]}
-    assert "Ecopetrol" not in nombres
-    assert "Celsia" not in nombres
-    assert body["total_activos"] == 10
-    assert body["pendientes"] == 9
+    assert body["total_active"] == 11
+    assert body["pending"] == 11
+    client.put("/prices", json={"instrument_id": eco, "year": 2026, "month": 9, "price": 2645})
+    client.put(f"/instruments/{celsia}", json={"active": False})
+    body = client.get("/prices/pending", params={"year": 2026, "month": 9}).json()
+    names = {f["instrument_name"] for f in body["missing"]}
+    assert "Ecopetrol" not in names
+    assert "Celsia" not in names
+    assert body["total_active"] == 10
+    assert body["pending"] == 9
+
+
+def test_fx_rate_upsert_and_conversion_math(client: TestClient) -> None:
+    r = client.put("/fx-rates", json={"year": 2026, "month": 9, "cop_per_usd": 4000})
+    assert r.status_code == 200
+    assert Decimal(str(r.json()["cop_per_usd"])) == Decimal("4000")
+    r = client.put("/fx-rates", json={"year": 2026, "month": 9, "cop_per_usd": 4100})
+    assert r.status_code == 200
+    rows = client.get("/fx-rates", params={"year": 2026}).json()
+    assert len(rows) == 1
+    assert Decimal(str(rows[0]["cop_per_usd"])) == Decimal("4100")
+    assert Decimal("10000") / Decimal("4000") == Decimal("2.5")
+
+
+def test_fx_rate_missing_month_is_not_invented(client: TestClient) -> None:
+    client.put("/fx-rates", json={"year": 2026, "month": 1, "cop_per_usd": 4000})
+    rows = client.get("/fx-rates", params={"year": 2026}).json()
+    months = {r["month"] for r in rows}
+    assert 1 in months
+    assert 9 not in months

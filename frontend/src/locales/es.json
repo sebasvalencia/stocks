@@ -1,0 +1,110 @@
+{
+  "app": { "title": "ACCIONES", "documentTitle": "Acciones" },
+  "nav": {
+    "summary": "Resumen",
+    "prices": "Precios",
+    "trades": "Movimientos",
+    "catalog": "Catálogo",
+    "fx": "TRM"
+  },
+  "lang": { "es": "ES", "en": "EN", "it": "IT" },
+  "currency": { "cop": "COP", "usd": "USD" },
+  "common": {
+    "year": "Año",
+    "month": "Mes",
+    "monthOptional": "Mes (opcional)",
+    "name": "Nombre",
+    "add": "Agregar",
+    "save": "Guardar",
+    "saveChanges": "Guardar cambios",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Borrar",
+    "select": "Seleccione",
+    "inactive": "inactivo",
+    "active": "activo",
+    "activate": "Activar",
+    "inactivate": "Inactivar",
+    "error": "Error",
+    "actions": "Acciones",
+    "dash": "—"
+  },
+  "months": {
+    "long": [
+      "enero", "febrero", "marzo", "abril", "mayo", "junio",
+      "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ],
+    "short": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+  },
+  "banner": {
+    "one": "Falta 1 precio de {{month}} ({{total}} títulos activos).",
+    "many": "Faltan {{count}} precios de {{month}} ({{total}} títulos activos).",
+    "load": "Cargar en Precios"
+  },
+  "catalog": {
+    "instruments": "Títulos",
+    "brokers": "Corredores"
+  },
+  "trades": {
+    "register": "Registrar compra o venta",
+    "edit": "Editar movimiento",
+    "history": "Historial",
+    "instrument": "Título",
+    "broker": "Corredor",
+    "type": "Tipo",
+    "buy": "Compra",
+    "sell": "Venta",
+    "quantity": "Cantidad",
+    "commission": "Comisión ({{currency}})",
+    "confirmDelete": "¿Borrar {{type}} de {{instrument}} en {{broker}}?"
+  },
+  "prices": {
+    "instrument": "Título",
+    "saved": "Precios guardados"
+  },
+  "summary": {
+    "total": "Total actual (títulos activos)",
+    "positions": "Posiciones",
+    "instrument": "Título",
+    "broker": "Corredor",
+    "balance": "Saldo",
+    "lastPrice": "Último precio",
+    "value": "Valor",
+    "weight": "Peso %",
+    "noPrice": "sin precio",
+    "pieTitle": "Peso % del portafolio",
+    "pieEmpty": "No hay valores con precio para graficar.",
+    "variationTitle": "Variación % mensual",
+    "variationEmpty": "Falta el mes calendario anterior; no se inventa el punto.",
+    "targetTitle": "Avance al precio objetivo",
+    "targetPrice": "Precio objetivo ({{currency}})",
+    "saveTarget": "Guardar objetivo",
+    "targetEmpty": "Falta el precio de mercado o el objetivo vigente; no se inventa el avance.",
+    "targetVs": "Último mercado vs objetivo vigente",
+    "period": "Periodo",
+    "target": "Objetivo",
+    "market": "Mercado"
+  },
+  "fx": {
+    "title": "TRM mensual (COP por 1 USD)",
+    "saved": "TRM guardada",
+    "missing": "sin TRM",
+    "hint": "La tasa se carga a mano. Si falta el mes, no se convierte a USD."
+  },
+  "errors": {
+    "brokerNotFound": "Corredor no encontrado",
+    "instrumentNotFound": "Título no encontrado",
+    "tradeNotFound": "Movimiento no encontrado",
+    "targetNotFound": "Objetivo no encontrado",
+    "priceNotFound": "Precio no encontrado",
+    "fxNotFound": "TRM no encontrada",
+    "brokerExists": "Ya existe un corredor con ese nombre",
+    "instrumentExists": "Ya existe un título con ese nombre",
+    "cannotInactivate": "No se puede inactivar: el título todavía tiene saldo mayor a 0",
+    "cannotBuyInactive": "No se puede comprar un título inactivo; actívelo primero",
+    "cannotDeleteBroker": "No se puede borrar: hay movimientos con este corredor",
+    "cannotDeleteInstrument": "No se puede borrar: hay movimientos, precios u objetivos de este título",
+    "cannotDeleteTrade": "No se puede borrar: el saldo del corredor quedaría negativo",
+    "sellExceedsBalance": "La venta supera el saldo de este corredor"
+  }
+}

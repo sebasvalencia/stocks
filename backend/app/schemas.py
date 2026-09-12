@@ -4,167 +4,182 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 
 
-def _decimal_sin_ceros(v: Decimal) -> str:
-    texto = format(v, "f")
-    if "." in texto:
-        texto = texto.rstrip("0").rstrip(".")
-    return texto
+def _plain_decimal(v: Decimal) -> str:
+    text = format(v, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text
 
 
-DecimalVisible = Annotated[Decimal, PlainSerializer(_decimal_sin_ceros, return_type=str)]
+VisibleDecimal = Annotated[Decimal, PlainSerializer(_plain_decimal, return_type=str)]
 
 
-class CorredorIn(BaseModel):
-    nombre: str = Field(min_length=1, max_length=120)
+class BrokerIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
 
 
-class CorredorOut(BaseModel):
+class BrokerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    nombre: str
+    name: str
 
 
-class InstrumentoIn(BaseModel):
-    nombre: str = Field(min_length=1, max_length=120)
-    activo: bool = True
+class InstrumentIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    active: bool = True
 
 
-class InstrumentoUpdate(BaseModel):
-    nombre: str | None = Field(default=None, min_length=1, max_length=120)
-    activo: bool | None = None
+class InstrumentUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    active: bool | None = None
 
 
-class InstrumentoOut(BaseModel):
+class InstrumentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    nombre: str
-    activo: bool
+    name: str
+    active: bool
 
 
-class MovimientoIn(BaseModel):
-    instrumento_id: int
-    corredor_id: int
-    tipo: Literal["compra", "venta"]
-    anio: int = Field(ge=1900, le=2100)
-    mes: int | None = Field(default=None, ge=1, le=12)
-    cantidad: Decimal = Field(gt=0)
-    comision: Decimal = Field(default=Decimal("0"), ge=0)
+class TradeIn(BaseModel):
+    instrument_id: int
+    broker_id: int
+    type: Literal["buy", "sell"]
+    year: int = Field(ge=1900, le=2100)
+    month: int | None = Field(default=None, ge=1, le=12)
+    quantity: Decimal = Field(gt=0)
+    commission: Decimal = Field(default=Decimal("0"), ge=0)
 
 
-class MovimientoOut(BaseModel):
+class TradeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    instrumento_id: int
-    corredor_id: int
-    tipo: str
-    anio: int
-    mes: int | None
-    cantidad: DecimalVisible
-    comision: DecimalVisible
-    instrumento_nombre: str | None = None
-    corredor_nombre: str | None = None
+    instrument_id: int
+    broker_id: int
+    type: str
+    year: int
+    month: int | None
+    quantity: VisibleDecimal
+    commission: VisibleDecimal
+    instrument_name: str | None = None
+    broker_name: str | None = None
 
 
-class PrecioIn(BaseModel):
-    instrumento_id: int
-    anio: int = Field(ge=1900, le=2100)
-    mes: int = Field(ge=1, le=12)
-    precio: Decimal = Field(gt=0)
+class PriceIn(BaseModel):
+    instrument_id: int
+    year: int = Field(ge=1900, le=2100)
+    month: int = Field(ge=1, le=12)
+    price: Decimal = Field(gt=0)
 
 
-class PrecioOut(BaseModel):
+class PriceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    instrumento_id: int
-    anio: int
-    mes: int
-    precio: DecimalVisible
-    instrumento_nombre: str | None = None
+    instrument_id: int
+    year: int
+    month: int
+    price: VisibleDecimal
+    instrument_name: str | None = None
 
 
-class PrecioFaltanteOut(BaseModel):
-    instrumento_id: int
-    instrumento_nombre: str
+class MissingPriceOut(BaseModel):
+    instrument_id: int
+    instrument_name: str
 
 
-class PreciosPendientesOut(BaseModel):
-    anio: int
-    mes: int
-    total_activos: int
-    pendientes: int
-    faltantes: list[PrecioFaltanteOut]
+class PendingPricesOut(BaseModel):
+    year: int
+    month: int
+    total_active: int
+    pending: int
+    missing: list[MissingPriceOut]
 
 
-class SaldoOut(BaseModel):
-    instrumento_id: int
-    instrumento_nombre: str
-    corredor_id: int
-    corredor_nombre: str
-    activo: bool
-    saldo: DecimalVisible
+class BalanceOut(BaseModel):
+    instrument_id: int
+    instrument_name: str
+    broker_id: int
+    broker_name: str
+    active: bool
+    balance: VisibleDecimal
 
 
-class PosicionOut(BaseModel):
-    instrumento_id: int
-    instrumento_nombre: str
-    corredor_id: int
-    corredor_nombre: str
-    saldo: DecimalVisible
-    precio_ultimo: DecimalVisible | None
-    anio_precio: int | None
-    mes_precio: int | None
-    valor: DecimalVisible | None
-    peso_pct: DecimalVisible | None
-    sin_precio: bool
+class PositionOut(BaseModel):
+    instrument_id: int
+    instrument_name: str
+    broker_id: int
+    broker_name: str
+    balance: VisibleDecimal
+    last_price: VisibleDecimal | None
+    price_year: int | None
+    price_month: int | None
+    value: VisibleDecimal | None
+    weight_pct: VisibleDecimal | None
+    missing_price: bool
 
 
-class ResumenOut(BaseModel):
-    total: DecimalVisible
-    posiciones: list[PosicionOut]
+class SummaryOut(BaseModel):
+    total: VisibleDecimal
+    positions: list[PositionOut]
 
 
-class ObjetivoIn(BaseModel):
-    instrumento_id: int
-    anio: int = Field(ge=1900, le=2100)
-    mes: int = Field(ge=1, le=12)
-    precio: Decimal = Field(gt=0)
+class TargetIn(BaseModel):
+    instrument_id: int
+    year: int = Field(ge=1900, le=2100)
+    month: int = Field(ge=1, le=12)
+    price: Decimal = Field(gt=0)
 
 
-class ObjetivoOut(BaseModel):
+class TargetOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    instrumento_id: int
-    anio: int
-    mes: int
-    precio: DecimalVisible
-    instrumento_nombre: str | None = None
+    instrument_id: int
+    year: int
+    month: int
+    price: VisibleDecimal
+    instrument_name: str | None = None
 
 
-class AvanceObjetivoOut(BaseModel):
-    instrumento_id: int
-    instrumento_nombre: str
-    precio_ultimo: DecimalVisible | None
-    anio_precio: int | None
-    mes_precio: int | None
-    objetivo: DecimalVisible | None
-    anio_objetivo: int | None
-    mes_objetivo: int | None
-    avance_pct: DecimalVisible | None
+class TargetProgressOut(BaseModel):
+    instrument_id: int
+    instrument_name: str
+    last_price: VisibleDecimal | None
+    price_year: int | None
+    price_month: int | None
+    target: VisibleDecimal | None
+    target_year: int | None
+    target_month: int | None
+    progress_pct: VisibleDecimal | None
 
 
-class VariacionPuntoOut(BaseModel):
-    anio: int
-    mes: int
-    precio: DecimalVisible
-    variacion_pct: DecimalVisible | None
+class VariationPointOut(BaseModel):
+    year: int
+    month: int
+    price: VisibleDecimal
+    variation_pct: VisibleDecimal | None
 
 
-class VariacionOut(BaseModel):
-    instrumento_id: int
-    instrumento_nombre: str
-    puntos: list[VariacionPuntoOut]
+class VariationOut(BaseModel):
+    instrument_id: int
+    instrument_name: str
+    points: list[VariationPointOut]
+
+
+class FxRateIn(BaseModel):
+    year: int = Field(ge=1900, le=2100)
+    month: int = Field(ge=1, le=12)
+    cop_per_usd: Decimal = Field(gt=0)
+
+
+class FxRateOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    year: int
+    month: int
+    cop_per_usd: VisibleDecimal

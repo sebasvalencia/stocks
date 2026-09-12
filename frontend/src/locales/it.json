@@ -1,0 +1,110 @@
+{
+  "app": { "title": "AZIONI", "documentTitle": "Azioni" },
+  "nav": {
+    "summary": "Riepilogo",
+    "prices": "Prezzi",
+    "trades": "Movimenti",
+    "catalog": "Catalogo",
+    "fx": "TRM"
+  },
+  "lang": { "es": "ES", "en": "EN", "it": "IT" },
+  "currency": { "cop": "COP", "usd": "USD" },
+  "common": {
+    "year": "Anno",
+    "month": "Mese",
+    "monthOptional": "Mese (opzionale)",
+    "name": "Nome",
+    "add": "Aggiungi",
+    "save": "Salva",
+    "saveChanges": "Salva modifiche",
+    "cancel": "Annulla",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "select": "Seleziona",
+    "inactive": "inattivo",
+    "active": "attivo",
+    "activate": "Attiva",
+    "inactivate": "Disattiva",
+    "error": "Errore",
+    "actions": "Azioni",
+    "dash": "—"
+  },
+  "months": {
+    "long": [
+      "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+      "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
+    ],
+    "short": ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+  },
+  "banner": {
+    "one": "Manca 1 prezzo di {{month}} ({{total}} titoli attivi).",
+    "many": "Mancano {{count}} prezzi di {{month}} ({{total}} titoli attivi).",
+    "load": "Carica in Prezzi"
+  },
+  "catalog": {
+    "instruments": "Titoli",
+    "brokers": "Broker"
+  },
+  "trades": {
+    "register": "Registra un acquisto o una vendita",
+    "edit": "Modifica movimento",
+    "history": "Storico",
+    "instrument": "Titolo",
+    "broker": "Broker",
+    "type": "Tipo",
+    "buy": "Acquisto",
+    "sell": "Vendita",
+    "quantity": "Quantità",
+    "commission": "Commissione ({{currency}})",
+    "confirmDelete": "Eliminare {{type}} di {{instrument}} presso {{broker}}?"
+  },
+  "prices": {
+    "instrument": "Titolo",
+    "saved": "Prezzi salvati"
+  },
+  "summary": {
+    "total": "Totale attuale (titoli attivi)",
+    "positions": "Posizioni",
+    "instrument": "Titolo",
+    "broker": "Broker",
+    "balance": "Saldo",
+    "lastPrice": "Ultimo prezzo",
+    "value": "Valore",
+    "weight": "Peso %",
+    "noPrice": "senza prezzo",
+    "pieTitle": "Peso % del portafoglio",
+    "pieEmpty": "Non ci sono valori con prezzo da graficare.",
+    "variationTitle": "Variazione % mensile",
+    "variationEmpty": "Manca il mese calendario precedente; il punto non viene inventato.",
+    "targetTitle": "Avanzamento verso il prezzo obiettivo",
+    "targetPrice": "Prezzo obiettivo ({{currency}})",
+    "saveTarget": "Salva obiettivo",
+    "targetEmpty": "Manca il prezzo di mercato o l'obiettivo vigente; l'avanzamento non viene inventato.",
+    "targetVs": "Ultimo mercato vs obiettivo vigente",
+    "period": "Periodo",
+    "target": "Obiettivo",
+    "market": "Mercato"
+  },
+  "fx": {
+    "title": "TRM mensile (COP per 1 USD)",
+    "saved": "TRM salvata",
+    "missing": "senza TRM",
+    "hint": "Il tasso si inserisce a mano. Se manca il mese, non si converte in USD."
+  },
+  "errors": {
+    "brokerNotFound": "Broker non trovato",
+    "instrumentNotFound": "Titolo non trovato",
+    "tradeNotFound": "Movimento non trovato",
+    "targetNotFound": "Obiettivo non trovato",
+    "priceNotFound": "Prezzo non trovato",
+    "fxNotFound": "TRM non trovata",
+    "brokerExists": "Esiste già un broker con questo nome",
+    "instrumentExists": "Esiste già un titolo con questo nome",
+    "cannotInactivate": "Impossibile disattivare: il titolo ha ancora un saldo maggiore di 0",
+    "cannotBuyInactive": "Impossibile acquistare un titolo inattivo; attivarlo prima",
+    "cannotDeleteBroker": "Impossibile eliminare: ci sono movimenti con questo broker",
+    "cannotDeleteInstrument": "Impossibile eliminare: questo titolo ha movimenti, prezzi o obiettivi",
+    "cannotDeleteTrade": "Impossibile eliminare: il saldo del broker diventerebbe negativo",
+    "sellExceedsBalance": "La vendita supera il saldo di questo broker"
+  }
+}

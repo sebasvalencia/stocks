@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import corredores, instrumentos, movimientos, objetivos, precios, resumen
+from app.routers import brokers, fx, instruments, prices, summary, targets, trades
 
 app = FastAPI(title="Acciones", version="0.1.0")
 
@@ -16,12 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(corredores.router)
-app.include_router(instrumentos.router)
-app.include_router(movimientos.router)
-app.include_router(precios.router)
-app.include_router(objetivos.router)
-app.include_router(resumen.router)
+app.include_router(brokers.router)
+app.include_router(instruments.router)
+app.include_router(trades.router)
+app.include_router(prices.router)
+app.include_router(targets.router)
+app.include_router(summary.router)
+app.include_router(fx.router)
 
 
 @app.get("/health")

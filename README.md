@@ -15,6 +15,8 @@ No hay login, no hay API de mercado ni importación de Excel. El precio pagado e
 - **Precio objetivo de venta** por título, un valor por mes. El historial se conserva; el vigente es el de fecha más reciente. Mismo mes = se actualiza.
 - **Resumen**: total actual = Σ (`saldo × último precio`) solo de títulos **activos**. Si falta precio, la posición se marca “sin precio” y no entra al total.
 - **Gráficas**: peso % del portafolio (torta), variación % mensual del precio (línea) y **avance al objetivo** (`último mercado / objetivo vigente`). Un mes hueco no inventa variación ni avance.
+- **Idioma**: selector ES / EN / IT en el header (`localStorage`). Los nombres de títulos y corredores no se traducen.
+- **Vista COP / USD**: el COP es lo persistido. El dólar usa la TRM mensual cargada a mano (`cop_per_usd`). Si falta la tasa del mes, se muestra “sin TRM”; no se inventa.
 - **Seed** inicial: 11 títulos (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura) y 2 corredores (D Corredores, Trii).
 
 
@@ -33,9 +35,10 @@ No hay login, no hay API de mercado ni importación de Excel. El precio pagado e
 | Comisión                                               | COP ≥ 0 en cada compra/venta; no entra al total                      |
 | Avance al objetivo                                     | Solo si hay precio de mercado **y** objetivo vigente                 |
 | Precios pendientes del mes                             | Solo títulos **activos** sin celda en el mes en curso                |
+| Vista USD sin TRM del mes                              | No se convierte; se muestra “sin TRM”                                |
 
 
-Moneda: **COP**. No hay conversión.
+Moneda persistida: **COP**. USD es solo presentación: `monto_usd = monto_cop / cop_per_usd` con la TRM **de ese mes**.
 
 ## Cómo funciona
 
@@ -61,19 +64,19 @@ sequenceDiagram
   participant DB as PostgreSQL
 
   Usuario->>Web: Compra / venta
-  Web->>API: POST /movimientos
-  API->>API: validar_movimiento
+  Web->>API: POST /trades
+  API->>API: validate_trade
   API->>DB: saldo del par título+corredor
   alt venta > saldo o título inactivo
     API-->>Web: 400
   else ok
-    API->>DB: INSERT movimiento
+    API->>DB: INSERT trade
     API-->>Web: 201
   end
 
   Usuario->>Web: Abrir Resumen
-  Web->>API: GET /resumen
-  API->>DB: movimientos y precios
+  Web->>API: GET /summary
+  API->>DB: trades y monthly_price
   API->>API: saldo × último precio (solo activos)
   API-->>Web: total + posiciones + peso %
 ```
@@ -87,7 +90,7 @@ Al arrancar el contenedor `api` se ejecuta la migración Alembic, el seed del ca
 
 | Capa         | Tecnología                                                             |
 | ------------ | ---------------------------------------------------------------------- |
-| UI           | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7, Recharts |
+| UI           | React 19, TypeScript, Vite 6, Tailwind CSS 3, React Router 7, Recharts, i18next |
 | API          | Python 3.12, FastAPI, Pydantic v2, Uvicorn, **uv**                     |
 | Persistencia | PostgreSQL 16, SQLAlchemy 2, Alembic                                   |
 | Pruebas      | pytest, httpx (`TestClient`)                                           |
@@ -183,7 +186,7 @@ cd backend
 uv run pytest
 ```
 
-Los tests usan SQLite en memoria (no hace falta Postgres) y cubren salud, seed, ventas, inactivación, resumen, variación, comisión, avance al objetivo y precios pendientes.
+Los tests usan SQLite en memoria (no hace falta Postgres) y cubren salud, seed, ventas, inactivación, resumen, variación, comisión, avance al objetivo, precios pendientes y TRM. Dumps viejos (esquema en español) se restauran y luego `alembic upgrade head` aplica `003` (rename) y `004` (`fx_rate`).
 
 ## Scan de seguridad (Semgrep)
 
@@ -252,37 +255,39 @@ acciones/
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   ├── alembic.ini
-│   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo
+│   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo, 003 inglés, 004 TRM
 │   ├── app/
 │   │   ├── main.py              # FastAPI, CORS, /health
 │   │   ├── config.py            # DATABASE_URL (sin default; sale del entorno)
 │   │   ├── database.py          # engine, sesión, Base
-│   │   ├── models.py            # ORM 3FN
+│   │   ├── models.py            # ORM 3FN (inglés)
 │   │   ├── schemas.py           # Pydantic de entrada/salida
 │   │   ├── seed.py              # 11 títulos + 2 corredores
-│   │   ├── routers/             # corredores, instrumentos, movimientos, precios, objetivos, resumen
-│   │   └── services/            # reglas, saldos, variación, objetivo
+│   │   ├── routers/             # brokers, instruments, trades, prices, targets, summary, fx
+│   │   └── services/            # rules, balances, variation, target
 │   └── tests/
 └── frontend/
     ├── Dockerfile
     ├── src/
     │   ├── main.tsx
-    │   ├── App.tsx              # rutas
+    │   ├── App.tsx              # rutas, idioma y COP/USD
     │   ├── api.ts               # cliente HTTP
+    │   ├── i18n.ts              # es / en / it
     │   ├── BannerPrecios.tsx    # aviso de huecos del mes en curso
-    │   └── pages/               # Resumen, Precios, Movimientos, Catalogo
+    │   └── pages/               # Summary, Prices, Trades, Catalog, FxRates
     └── ...
 ```
 
 Pantallas:
 
 
-| Ruta           | Pantalla                                  |
-| -------------- | ----------------------------------------- |
-| `/`            | Total, posiciones, peso %, variación %, avance; banner si faltan precios del mes |
-| `/precios`     | Grilla mes × título; banner y celdas ámbar del mes en curso                      |
-| `/movimientos` | Alta, edición y borrado de compras/ventas (con comisión)   |
-| `/catalogo`    | Títulos, corredores, activar/inactivar    |
+| Ruta        | Pantalla                                                                              |
+| ----------- | ------------------------------------------------------------------------------------- |
+| `/`         | Total, posiciones, peso %, variación %, avance; banner si faltan precios del mes      |
+| `/prices`   | Grilla mes × título; banner y celdas ámbar del mes en curso                           |
+| `/trades`   | Alta, edición y borrado de compras/ventas (con comisión)                              |
+| `/catalog`  | Títulos, corredores, activar/inactivar                                                |
+| `/fx`       | TRM mensual (COP por 1 USD)                                                           |
 
 
 
@@ -290,78 +295,86 @@ Pantallas:
 ### API
 
 
-| Método           | Ruta                                 | Notas                                             |
-| ---------------- | ------------------------------------ | ------------------------------------------------- |
-| GET              | `/health`                            | `{ "status": "ok" }`                              |
-| CRUD             | `/corredores`                        | Nombre único                                      |
-| CRUD             | `/instrumentos`                      | Incluye `activo`; inactivar valida saldo 0        |
-| CRUD             | `/movimientos`                       | Valida saldo en ventas y título activo en compras; `comision` ≥ 0 |
-| GET, PUT, DELETE | `/precios`                           | PUT es upsert por título + año + mes                              |
-| GET              | `/precios/pendientes?anio=&mes=`     | Títulos activos sin precio en ese periodo                         |
-| GET, PUT, DELETE | `/objetivos`                         | PUT es upsert por título + año + mes; historial por título        |
-| GET              | `/avance-objetivo?instrumento_id=`   | `null` si falta mercado u objetivo vigente                        |
-| GET              | `/saldos`                            | Calculado; no se persiste                                         |
-| GET              | `/resumen`                           | Total y peso % solo activos; la comisión no resta                 |
-| GET              | `/variacion-precios?instrumento_id=` | `null` si falta el mes anterior                                   |
+| Método           | Ruta                                  | Notas                                             |
+| ---------------- | ------------------------------------- | ------------------------------------------------- |
+| GET              | `/health`                             | `{ "status": "ok" }`                              |
+| CRUD             | `/brokers`                            | Nombre único                                      |
+| CRUD             | `/instruments`                        | Incluye `active`; inactivar valida saldo 0        |
+| CRUD             | `/trades`                             | Valida saldo en ventas y título activo en compras; `commission` ≥ 0 |
+| GET, PUT, DELETE | `/prices`                             | PUT es upsert por título + año + mes                              |
+| GET              | `/prices/pending?year=&month=`        | Títulos activos sin precio en ese periodo                         |
+| GET, PUT, DELETE | `/targets`                            | PUT es upsert por título + año + mes; historial por título        |
+| GET              | `/target-progress?instrument_id=`     | `null` si falta mercado u objetivo vigente                        |
+| GET              | `/balances`                           | Calculado; no se persiste                                         |
+| GET              | `/summary`                            | Total y peso % solo activos; la comisión no resta                 |
+| GET              | `/price-variation?instrument_id=`     | `null` si falta el mes anterior                                   |
+| GET, PUT, DELETE | `/fx-rates`                           | PUT es upsert por año + mes; `cop_per_usd` > 0                    |
 
 
 
 
 ## Diagrama de la base de datos
 
-Cinco tablas en **tercera forma normal**. El saldo, los porcentajes y el avance al objetivo son consultas, no tablas. El precio de mercado y el objetivo no dependen del corredor.
+Seis tablas en **tercera forma normal**. El saldo, los porcentajes y el avance al objetivo son consultas, no tablas. El precio de mercado, el objetivo y la TRM no dependen del corredor.
 
 ```mermaid
 erDiagram
-  CORREDOR {
+  BROKER {
     int id PK
-    varchar nombre UK
+    varchar name UK
   }
-  INSTRUMENTO {
+  INSTRUMENT {
     int id PK
-    varchar nombre UK
-    boolean activo
+    varchar name UK
+    boolean active
   }
-  MOVIMIENTO {
+  TRADE {
     int id PK
-    int instrumento_id FK
-    int corredor_id FK
-    varchar tipo "compra | venta"
-    smallint anio
-    smallint mes "nullable 1-12"
-    numeric cantidad "> 0"
-    numeric comision ">= 0 COP"
+    int instrument_id FK
+    int broker_id FK
+    varchar type "buy | sell"
+    smallint year
+    smallint month "nullable 1-12"
+    numeric quantity "> 0"
+    numeric commission ">= 0 COP"
   }
-  PRECIO_MENSUAL {
+  MONTHLY_PRICE {
     int id PK
-    int instrumento_id FK
-    smallint anio
-    smallint mes "1-12"
-    numeric precio "> 0"
+    int instrument_id FK
+    smallint year
+    smallint month "1-12"
+    numeric price "> 0"
   }
-  OBJETIVO_PRECIO {
+  PRICE_TARGET {
     int id PK
-    int instrumento_id FK
-    smallint anio
-    smallint mes "1-12"
-    numeric precio "> 0"
+    int instrument_id FK
+    smallint year
+    smallint month "1-12"
+    numeric price "> 0"
+  }
+  FX_RATE {
+    int id PK
+    smallint year
+    smallint month "1-12"
+    numeric cop_per_usd "> 0"
   }
 
-  CORREDOR ||--o{ MOVIMIENTO : registra
-  INSTRUMENTO ||--o{ MOVIMIENTO : registra
-  INSTRUMENTO ||--o{ PRECIO_MENSUAL : cotiza
-  INSTRUMENTO ||--o{ OBJETIVO_PRECIO : apunta
+  BROKER ||--o{ TRADE : records
+  INSTRUMENT ||--o{ TRADE : records
+  INSTRUMENT ||--o{ MONTHLY_PRICE : quotes
+  INSTRUMENT ||--o{ PRICE_TARGET : targets
 ```
 
 
 
 Restricciones:
 
-- `movimiento.tipo` ∈ `{compra, venta}`; `cantidad > 0`; `comision >= 0`; `mes` nulo o entre 1 y 12.
-- `precio_mensual` y `objetivo_precio` únicos por (`instrumento_id`, `anio`, `mes`); `precio > 0`.
-- FKs: `movimiento` → `instrumento` y `corredor`; `precio_mensual` y `objetivo_precio` → `instrumento`.
+- `trade.type` ∈ `{buy, sell}`; `quantity > 0`; `commission >= 0`; `month` nulo o entre 1 y 12.
+- `monthly_price` y `price_target` únicos por (`instrument_id`, `year`, `month`); `price > 0`.
+- `fx_rate` único por (`year`, `month`); `cop_per_usd > 0`.
+- FKs: `trade` → `instrument` y `broker`; `monthly_price` y `price_target` → `instrument`.
 
-Por qué es 3FN: cada atributo no clave depende solo de la PK. No se copia el nombre del título en movimiento, precio ni objetivo. El saldo y el avance (`último mercado / objetivo vigente`) se obtienen de consultas.
+Por qué es 3FN: cada atributo no clave depende solo de la PK. No se copia el nombre del título en trade, precio ni objetivo. El saldo, el avance y la vista USD se obtienen de consultas.
 
 ## Diagrama de clases
 
@@ -371,48 +384,54 @@ Por qué es 3FN: cada atributo no clave depende solo de la PK. No se copia el no
 
 ```mermaid
 classDiagram
-  class Corredor {
+  class Broker {
     +int id
-    +str nombre
-    +movimientos: list~Movimiento~
+    +str name
+    +trades: list~Trade~
   }
-  class Instrumento {
+  class Instrument {
     +int id
-    +str nombre
-    +bool activo
-    +movimientos: list~Movimiento~
-    +precios: list~PrecioMensual~
-    +objetivos: list~ObjetivoPrecio~
+    +str name
+    +bool active
+    +trades: list~Trade~
+    +prices: list~MonthlyPrice~
+    +targets: list~PriceTarget~
   }
-  class Movimiento {
+  class Trade {
     +int id
-    +int instrumento_id
-    +int corredor_id
-    +str tipo
-    +int anio
-    +int mes
-    +Decimal cantidad
-    +Decimal comision
+    +int instrument_id
+    +int broker_id
+    +str type
+    +int year
+    +int month
+    +Decimal quantity
+    +Decimal commission
   }
-  class PrecioMensual {
+  class MonthlyPrice {
     +int id
-    +int instrumento_id
-    +int anio
-    +int mes
-    +Decimal precio
+    +int instrument_id
+    +int year
+    +int month
+    +Decimal price
   }
-  class ObjetivoPrecio {
+  class PriceTarget {
     +int id
-    +int instrumento_id
-    +int anio
-    +int mes
-    +Decimal precio
+    +int instrument_id
+    +int year
+    +int month
+    +Decimal price
+  }
+  class FxRate {
+    +int id
+    +int year
+    +int month
+    +Decimal cop_per_usd
   }
 
-  Corredor "1" --> "*" Movimiento : movimientos
-  Instrumento "1" --> "*" Movimiento : movimientos
-  Instrumento "1" --> "*" PrecioMensual : precios
-  Instrumento "1" --> "*" ObjetivoPrecio : objetivos
+  Broker "1" --> "*" Trade : trades
+  Instrument "1" --> "*" Trade : trades
+  Instrument "1" --> "*" MonthlyPrice : prices
+  Instrument "1" --> "*" PriceTarget : targets
 ```
 
 
@@ -428,66 +447,71 @@ classDiagram
   class FastAPI_app {
     +health()
   }
-  class CorredoresRouter
-  class InstrumentosRouter
-  class MovimientosRouter
-  class PreciosRouter
-  class ObjetivosRouter
-  class ResumenRouter
+  class BrokersRouter
+  class InstrumentsRouter
+  class TradesRouter
+  class PricesRouter
+  class TargetsRouter
+  class SummaryRouter
+  class FxRouter
 
-  class reglas {
-    +get_corredor()
-    +get_instrumento()
-    +get_movimiento()
-    +validar_inactivar()
-    +validar_movimiento()
+  class rules {
+    +get_broker()
+    +get_instrument()
+    +get_trade()
+    +validate_inactivate()
+    +validate_trade()
   }
-  class saldos {
-    +saldo_par()
-    +saldo_titulo()
+  class balances {
+    +pair_balance()
+    +instrument_balance()
   }
-  class variacion {
-    +mes_calendario_anterior()
-    +puntos_variacion()
+  class variation {
+    +previous_calendar_month()
+    +variation_points()
   }
-  class objetivo {
-    +objetivo_vigente()
-    +avance_pct()
-    +ultimo_precio()
+  class target {
+    +current_target()
+    +progress_pct()
+    +last_price()
   }
 
-  FastAPI_app --> CorredoresRouter
-  FastAPI_app --> InstrumentosRouter
-  FastAPI_app --> MovimientosRouter
-  FastAPI_app --> PreciosRouter
-  FastAPI_app --> ObjetivosRouter
-  FastAPI_app --> ResumenRouter
-  InstrumentosRouter --> reglas
-  MovimientosRouter --> reglas
-  MovimientosRouter --> saldos
-  ObjetivosRouter --> objetivo
-  ResumenRouter --> saldos
-  ResumenRouter --> variacion
-  reglas --> saldos
+  FastAPI_app --> BrokersRouter
+  FastAPI_app --> InstrumentsRouter
+  FastAPI_app --> TradesRouter
+  FastAPI_app --> PricesRouter
+  FastAPI_app --> TargetsRouter
+  FastAPI_app --> SummaryRouter
+  FastAPI_app --> FxRouter
+  InstrumentsRouter --> rules
+  TradesRouter --> rules
+  TradesRouter --> balances
+  TargetsRouter --> target
+  SummaryRouter --> balances
+  SummaryRouter --> variation
+  rules --> balances
 
   class App
-  class Catalogo
-  class MovimientosPage
-  class PreciosPage
-  class ResumenPage
+  class Catalog
+  class TradesPage
+  class PricesPage
+  class SummaryPage
+  class FxRatesPage
   class api
 
-  App --> Catalogo
-  App --> MovimientosPage
-  App --> PreciosPage
-  App --> ResumenPage
-  Catalogo --> api
-  MovimientosPage --> api
-  PreciosPage --> api
-  ResumenPage --> api
+  App --> Catalog
+  App --> TradesPage
+  App --> PricesPage
+  App --> SummaryPage
+  App --> FxRatesPage
+  Catalog --> api
+  TradesPage --> api
+  PricesPage --> api
+  SummaryPage --> api
+  FxRatesPage --> api
   api ..> FastAPI_app : HTTP
 ```
 
 
 
-DTOs Pydantic (entrada/salida, no persistidos): `CorredorIn/Out`, `InstrumentoIn/Update/Out`, `MovimientoIn/Out`, `PrecioIn/Out`, `ObjetivoIn/Out`, `AvanceObjetivoOut`, `SaldoOut`, `PosicionOut`, `ResumenOut`, `VariacionOut`.
+DTOs Pydantic (entrada/salida, no persistidos): `BrokerIn/Out`, `InstrumentIn/Update/Out`, `TradeIn/Out`, `PriceIn/Out`, `TargetIn/Out`, `TargetProgressOut`, `BalanceOut`, `PositionOut`, `SummaryOut`, `VariationOut`, `FxRateIn/Out`.

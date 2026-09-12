@@ -1,0 +1,110 @@
+{
+  "app": { "title": "STOCKS", "documentTitle": "Stocks" },
+  "nav": {
+    "summary": "Summary",
+    "prices": "Prices",
+    "trades": "Trades",
+    "catalog": "Catalog",
+    "fx": "FX"
+  },
+  "lang": { "es": "ES", "en": "EN", "it": "IT" },
+  "currency": { "cop": "COP", "usd": "USD" },
+  "common": {
+    "year": "Year",
+    "month": "Month",
+    "monthOptional": "Month (optional)",
+    "name": "Name",
+    "add": "Add",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "select": "Select",
+    "inactive": "inactive",
+    "active": "active",
+    "activate": "Activate",
+    "inactivate": "Deactivate",
+    "error": "Error",
+    "actions": "Actions",
+    "dash": "—"
+  },
+  "months": {
+    "long": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  },
+  "banner": {
+    "one": "1 price missing for {{month}} ({{total}} active holdings).",
+    "many": "{{count}} prices missing for {{month}} ({{total}} active holdings).",
+    "load": "Enter on Prices"
+  },
+  "catalog": {
+    "instruments": "Holdings",
+    "brokers": "Brokers"
+  },
+  "trades": {
+    "register": "Record a buy or sell",
+    "edit": "Edit trade",
+    "history": "History",
+    "instrument": "Holding",
+    "broker": "Broker",
+    "type": "Type",
+    "buy": "Buy",
+    "sell": "Sell",
+    "quantity": "Quantity",
+    "commission": "Commission ({{currency}})",
+    "confirmDelete": "Delete {{type}} of {{instrument}} at {{broker}}?"
+  },
+  "prices": {
+    "instrument": "Holding",
+    "saved": "Prices saved"
+  },
+  "summary": {
+    "total": "Current total (active holdings)",
+    "positions": "Positions",
+    "instrument": "Holding",
+    "broker": "Broker",
+    "balance": "Balance",
+    "lastPrice": "Last price",
+    "value": "Value",
+    "weight": "Weight %",
+    "noPrice": "no price",
+    "pieTitle": "Portfolio weight %",
+    "pieEmpty": "No priced values to chart.",
+    "variationTitle": "Monthly % change",
+    "variationEmpty": "The previous calendar month is missing; the point is not invented.",
+    "targetTitle": "Progress to target price",
+    "targetPrice": "Target price ({{currency}})",
+    "saveTarget": "Save target",
+    "targetEmpty": "Market price or current target is missing; progress is not invented.",
+    "targetVs": "Last market vs current target",
+    "period": "Period",
+    "target": "Target",
+    "market": "Market"
+  },
+  "fx": {
+    "title": "Monthly TRM (COP per 1 USD)",
+    "saved": "TRM saved",
+    "missing": "no TRM",
+    "hint": "The rate is entered by hand. If the month is missing, values are not converted to USD."
+  },
+  "errors": {
+    "brokerNotFound": "Broker not found",
+    "instrumentNotFound": "Holding not found",
+    "tradeNotFound": "Trade not found",
+    "targetNotFound": "Target not found",
+    "priceNotFound": "Price not found",
+    "fxNotFound": "FX rate not found",
+    "brokerExists": "A broker with that name already exists",
+    "instrumentExists": "A holding with that name already exists",
+    "cannotInactivate": "Cannot deactivate: the holding still has a balance greater than 0",
+    "cannotBuyInactive": "Cannot buy an inactive holding; activate it first",
+    "cannotDeleteBroker": "Cannot delete: there are trades with this broker",
+    "cannotDeleteInstrument": "Cannot delete: this holding has trades, prices, or targets",
+    "cannotDeleteTrade": "Cannot delete: the broker balance would become negative",
+    "sellExceedsBalance": "The sale exceeds the balance at this broker"
+  }
+}

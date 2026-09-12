@@ -2,10 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.models import Corredor, Instrumento
+from app.models import Broker, Instrument
 
-CORREDORES = ["D Corredores", "Trii"]
-INSTRUMENTOS = [
+BROKERS = ["D Corredores", "Trii"]
+INSTRUMENTS = [
     "Ecopetrol",
     "Celsia",
     "ETB",
@@ -21,14 +21,14 @@ INSTRUMENTOS = [
 
 
 def seed(db: Session) -> None:
-    existentes_c = {n for n in db.scalars(select(Corredor.nombre)).all()}
-    for nombre in CORREDORES:
-        if nombre not in existentes_c:
-            db.add(Corredor(nombre=nombre))
-    existentes_i = {n for n in db.scalars(select(Instrumento.nombre)).all()}
-    for nombre in INSTRUMENTOS:
-        if nombre not in existentes_i:
-            db.add(Instrumento(nombre=nombre, activo=True))
+    existing_b = {n for n in db.scalars(select(Broker.name)).all()}
+    for name in BROKERS:
+        if name not in existing_b:
+            db.add(Broker(name=name))
+    existing_i = {n for n in db.scalars(select(Instrument.name)).all()}
+    for name in INSTRUMENTS:
+        if name not in existing_i:
+            db.add(Instrument(name=name, active=True))
     db.commit()
 
 

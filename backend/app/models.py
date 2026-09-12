@@ -15,80 +15,94 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class Corredor(Base):
-    __tablename__ = "corredor"
+class Broker(Base):
+    __tablename__ = "broker"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
 
-    movimientos: Mapped[list["Movimiento"]] = relationship(back_populates="corredor")
+    trades: Mapped[list["Trade"]] = relationship(back_populates="broker")
 
 
-class Instrumento(Base):
-    __tablename__ = "instrumento"
+class Instrument(Base):
+    __tablename__ = "instrument"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    movimientos: Mapped[list["Movimiento"]] = relationship(back_populates="instrumento")
-    precios: Mapped[list["PrecioMensual"]] = relationship(back_populates="instrumento")
-    objetivos: Mapped[list["ObjetivoPrecio"]] = relationship(back_populates="instrumento")
+    trades: Mapped[list["Trade"]] = relationship(back_populates="instrument")
+    prices: Mapped[list["MonthlyPrice"]] = relationship(back_populates="instrument")
+    targets: Mapped[list["PriceTarget"]] = relationship(back_populates="instrument")
 
 
-class Movimiento(Base):
-    __tablename__ = "movimiento"
+class Trade(Base):
+    __tablename__ = "trade"
     __table_args__ = (
-        CheckConstraint("tipo IN ('compra', 'venta')", name="ck_movimiento_tipo"),
-        CheckConstraint("cantidad > 0", name="ck_movimiento_cantidad"),
-        CheckConstraint("comision >= 0", name="ck_movimiento_comision"),
-        CheckConstraint("mes IS NULL OR (mes >= 1 AND mes <= 12)", name="ck_movimiento_mes"),
+        CheckConstraint("type IN ('buy', 'sell')", name="ck_trade_type"),
+        CheckConstraint("quantity > 0", name="ck_trade_quantity"),
+        CheckConstraint("commission >= 0", name="ck_trade_commission"),
+        CheckConstraint("month IS NULL OR (month >= 1 AND month <= 12)", name="ck_trade_month"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    instrumento_id: Mapped[int] = mapped_column(ForeignKey("instrumento.id"), nullable=False)
-    corredor_id: Mapped[int] = mapped_column(ForeignKey("corredor.id"), nullable=False)
-    tipo: Mapped[str] = mapped_column(String(10), nullable=False)
-    anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    mes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
-    cantidad: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
-    comision: Mapped[Decimal] = mapped_column(
+    instrument_id: Mapped[int] = mapped_column(ForeignKey("instrument.id"), nullable=False)
+    broker_id: Mapped[int] = mapped_column(ForeignKey("broker.id"), nullable=False)
+    type: Mapped[str] = mapped_column(String(10), nullable=False)
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    month: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    commission: Mapped[Decimal] = mapped_column(
         Numeric(18, 2), nullable=False, default=Decimal("0")
     )
 
-    instrumento: Mapped[Instrumento] = relationship(back_populates="movimientos")
-    corredor: Mapped[Corredor] = relationship(back_populates="movimientos")
+    instrument: Mapped[Instrument] = relationship(back_populates="trades")
+    broker: Mapped[Broker] = relationship(back_populates="trades")
 
 
-class PrecioMensual(Base):
-    __tablename__ = "precio_mensual"
+class MonthlyPrice(Base):
+    __tablename__ = "monthly_price"
     __table_args__ = (
-        UniqueConstraint("instrumento_id", "anio", "mes", name="uq_precio_instrumento_periodo"),
-        CheckConstraint("mes >= 1 AND mes <= 12", name="ck_precio_mes"),
-        CheckConstraint("precio > 0", name="ck_precio_valor"),
+        UniqueConstraint("instrument_id", "year", "month", name="uq_monthly_price_instrument_period"),
+        CheckConstraint("month >= 1 AND month <= 12", name="ck_monthly_price_month"),
+        CheckConstraint("price > 0", name="ck_monthly_price_value"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    instrumento_id: Mapped[int] = mapped_column(ForeignKey("instrumento.id"), nullable=False)
-    anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    mes: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    precio: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    instrument_id: Mapped[int] = mapped_column(ForeignKey("instrument.id"), nullable=False)
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    month: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
 
-    instrumento: Mapped[Instrumento] = relationship(back_populates="precios")
+    instrument: Mapped[Instrument] = relationship(back_populates="prices")
 
 
-class ObjetivoPrecio(Base):
-    __tablename__ = "objetivo_precio"
+class PriceTarget(Base):
+    __tablename__ = "price_target"
     __table_args__ = (
-        UniqueConstraint("instrumento_id", "anio", "mes", name="uq_objetivo_instrumento_periodo"),
-        CheckConstraint("mes >= 1 AND mes <= 12", name="ck_objetivo_mes"),
-        CheckConstraint("precio > 0", name="ck_objetivo_valor"),
+        UniqueConstraint("instrument_id", "year", "month", name="uq_price_target_instrument_period"),
+        CheckConstraint("month >= 1 AND month <= 12", name="ck_price_target_month"),
+        CheckConstraint("price > 0", name="ck_price_target_value"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    instrumento_id: Mapped[int] = mapped_column(ForeignKey("instrumento.id"), nullable=False)
-    anio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    mes: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    precio: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    instrument_id: Mapped[int] = mapped_column(ForeignKey("instrument.id"), nullable=False)
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    month: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
 
-    instrumento: Mapped[Instrumento] = relationship(back_populates="objetivos")
+    instrument: Mapped[Instrument] = relationship(back_populates="targets")
+
+
+class FxRate(Base):
+    __tablename__ = "fx_rate"
+    __table_args__ = (
+        UniqueConstraint("year", "month", name="uq_fx_rate_period"),
+        CheckConstraint("month >= 1 AND month <= 12", name="ck_fx_rate_month"),
+        CheckConstraint("cop_per_usd > 0", name="ck_fx_rate_value"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    month: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    cop_per_usd: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
