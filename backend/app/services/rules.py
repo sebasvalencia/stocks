@@ -1,9 +1,10 @@
 from decimal import Decimal
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Broker, Instrument, Trade
+from app.models import Broker, Instrument, MonthlyPrice, PriceTarget, Trade
 from app.services.balances import instrument_balance, pair_balance
 
 
@@ -37,6 +38,20 @@ def validate_inactivate(db: Session, instrument: Instrument, active: bool) -> No
     if active is False and instrument.active is True:
         if instrument_balance(db, instrument.id) > 0:
             raise BusinessRule("cannot_inactivate")
+
+
+def validate_currency_change(db: Session, instrument: Instrument, currency: str) -> None:
+    if currency == instrument.currency:
+        return
+    has_data = (
+        db.scalar(select(Trade.id).where(Trade.instrument_id == instrument.id).limit(1)) is not None
+        or db.scalar(select(MonthlyPrice.id).where(MonthlyPrice.instrument_id == instrument.id).limit(1))
+        is not None
+        or db.scalar(select(PriceTarget.id).where(PriceTarget.instrument_id == instrument.id).limit(1))
+        is not None
+    )
+    if has_data:
+        raise BusinessRule("cannot_change_currency")
 
 
 def validate_trade(

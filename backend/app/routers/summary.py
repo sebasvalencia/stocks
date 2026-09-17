@@ -37,6 +37,7 @@ def balances(db: Session = Depends(get_db)) -> list[BalanceOut]:
                 broker_name=brk.name,
                 active=inst.active,
                 balance=pair_balance(db, inst.id, brk.id),
+                instrument_currency=inst.currency,
             )
         )
     out.sort(key=lambda r: (r.instrument_name, r.broker_name))
@@ -75,6 +76,7 @@ def summary(db: Session = Depends(get_db)) -> SummaryOut:
                 value=value,
                 weight_pct=None,
                 missing_price=missing_price,
+                instrument_currency=inst.currency,
             )
         )
 
@@ -116,5 +118,6 @@ def variation(
     return VariationOut(
         instrument_id=inst.id,
         instrument_name=inst.name,
+        instrument_currency=inst.currency,
         points=points,
     )

@@ -26,10 +26,14 @@ class Broker(Base):
 
 class Instrument(Base):
     __tablename__ = "instrument"
+    __table_args__ = (
+        CheckConstraint("currency IN ('COP', 'USD')", name="ck_instrument_currency"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="COP", server_default="COP")
 
     trades: Mapped[list["Trade"]] = relationship(back_populates="instrument")
     prices: Mapped[list["MonthlyPrice"]] = relationship(back_populates="instrument")

@@ -23,6 +23,7 @@ def _out(row: Trade) -> TradeOut:
         commission=row.commission,
         instrument_name=row.instrument.name if row.instrument else None,
         broker_name=row.broker.name if row.broker else None,
+        instrument_currency=row.instrument.currency if row.instrument else None,
     )
 
 

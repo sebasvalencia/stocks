@@ -44,7 +44,8 @@
   },
   "catalog": {
     "instruments": "Títulos",
-    "brokers": "Corredores"
+    "brokers": "Corredores",
+    "currency": "Moneda del título"
   },
   "trades": {
     "register": "Registrar compra o venta",
@@ -90,7 +91,7 @@
     "title": "TRM mensual (COP por 1 USD)",
     "saved": "TRM guardada",
     "missing": "sin TRM",
-    "hint": "La tasa se carga a mano. Si falta el mes, no se convierte a USD."
+    "hint": "La tasa se carga a mano. Si falta el mes, no se convierte entre COP y USD."
   },
   "errors": {
     "brokerNotFound": "Corredor no encontrado",
@@ -106,6 +107,7 @@
     "cannotDeleteBroker": "No se puede borrar: hay movimientos con este corredor",
     "cannotDeleteInstrument": "No se puede borrar: hay movimientos, precios u objetivos de este título",
     "cannotDeleteTrade": "No se puede borrar: el saldo del corredor quedaría negativo",
-    "sellExceedsBalance": "La venta supera el saldo de este corredor"
+    "sellExceedsBalance": "La venta supera el saldo de este corredor",
+    "cannotChangeCurrency": "No se puede cambiar la moneda: el título ya tiene movimientos, precios u objetivos"
   }
 }

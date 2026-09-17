@@ -44,7 +44,8 @@
   },
   "catalog": {
     "instruments": "Titoli",
-    "brokers": "Broker"
+    "brokers": "Broker",
+    "currency": "Valuta del titolo"
   },
   "trades": {
     "register": "Registra un acquisto o una vendita",
@@ -90,7 +91,7 @@
     "title": "TRM mensile (COP per 1 USD)",
     "saved": "TRM salvata",
     "missing": "senza TRM",
-    "hint": "Il tasso si inserisce a mano. Se manca il mese, non si converte in USD."
+    "hint": "Il tasso si inserisce a mano. Se manca il mese, non si converte tra COP e USD."
   },
   "errors": {
     "brokerNotFound": "Broker non trovato",
@@ -106,6 +107,7 @@
     "cannotDeleteBroker": "Impossibile eliminare: ci sono movimenti con questo broker",
     "cannotDeleteInstrument": "Impossibile eliminare: questo titolo ha movimenti, prezzi o obiettivi",
     "cannotDeleteTrade": "Impossibile eliminare: il saldo del broker diventerebbe negativo",
-    "sellExceedsBalance": "La vendita supera il saldo di questo broker"
+    "sellExceedsBalance": "La vendita supera il saldo di questo broker",
+    "cannotChangeCurrency": "Impossibile cambiare valuta: il titolo ha già movimenti, prezzi o obiettivi"
   }
 }

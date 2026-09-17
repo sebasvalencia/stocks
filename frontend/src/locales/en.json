@@ -44,7 +44,8 @@
   },
   "catalog": {
     "instruments": "Holdings",
-    "brokers": "Brokers"
+    "brokers": "Brokers",
+    "currency": "Holding currency"
   },
   "trades": {
     "register": "Record a buy or sell",
@@ -90,7 +91,7 @@
     "title": "Monthly TRM (COP per 1 USD)",
     "saved": "TRM saved",
     "missing": "no TRM",
-    "hint": "The rate is entered by hand. If the month is missing, values are not converted to USD."
+    "hint": "The rate is entered by hand. If the month is missing, values are not converted between COP and USD."
   },
   "errors": {
     "brokerNotFound": "Broker not found",
@@ -106,6 +107,7 @@
     "cannotDeleteBroker": "Cannot delete: there are trades with this broker",
     "cannotDeleteInstrument": "Cannot delete: this holding has trades, prices, or targets",
     "cannotDeleteTrade": "Cannot delete: the broker balance would become negative",
-    "sellExceedsBalance": "The sale exceeds the balance at this broker"
+    "sellExceedsBalance": "The sale exceeds the balance at this broker",
+    "cannotChangeCurrency": "Cannot change currency: the holding already has trades, prices, or targets"
   }
 }

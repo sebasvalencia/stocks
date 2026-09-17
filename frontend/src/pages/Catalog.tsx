@@ -7,6 +7,7 @@ export default function Catalog() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [instrumentName, setInstrumentName] = useState("");
+  const [instrumentCurrency, setInstrumentCurrency] = useState<"COP" | "USD">("COP");
   const [brokerName, setBrokerName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -24,8 +25,9 @@ export default function Catalog() {
     e.preventDefault();
     setError(null);
     try {
-      await api.createInstrument(instrumentName.trim());
+      await api.createInstrument(instrumentName.trim(), instrumentCurrency);
       setInstrumentName("");
+      setInstrumentCurrency("COP");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
@@ -63,14 +65,23 @@ export default function Catalog() {
       )}
       <section className="rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("catalog.instruments")}</h2>
-        <form onSubmit={addInstrument} className="mt-3 flex gap-2">
+        <form onSubmit={addInstrument} className="mt-3 flex flex-wrap gap-2">
           <input
-            className="flex-1 rounded border border-line px-3 py-2"
+            className="min-w-[10rem] flex-1 rounded border border-line px-3 py-2"
             value={instrumentName}
             onChange={(e) => setInstrumentName(e.target.value)}
             placeholder={t("common.name")}
             required
           />
+          <select
+            className="rounded border border-line bg-surface-2 px-2 py-2 text-sm"
+            value={instrumentCurrency}
+            onChange={(e) => setInstrumentCurrency(e.target.value as "COP" | "USD")}
+            aria-label={t("catalog.currency")}
+          >
+            <option value="COP">{t("currency.cop")}</option>
+            <option value="USD">{t("currency.usd")}</option>
+          </select>
           <button className="rounded bg-up px-3 py-2 text-sm text-white" type="submit">
             {t("common.add")}
           </button>
@@ -81,7 +92,7 @@ export default function Catalog() {
               <span>
                 {row.name}{" "}
                 <span className="text-xs text-muted">
-                  {row.active ? t("common.active") : t("common.inactive")}
+                  {row.currency} · {row.active ? t("common.active") : t("common.inactive")}
                 </span>
               </span>
               <button

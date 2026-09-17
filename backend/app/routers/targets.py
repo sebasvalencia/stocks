@@ -20,6 +20,7 @@ def _out(row: PriceTarget) -> TargetOut:
         month=row.month,
         price=row.price,
         instrument_name=row.instrument.name if row.instrument else None,
+        instrument_currency=row.instrument.currency if row.instrument else None,
     )
 
 
@@ -107,4 +108,5 @@ def progress(
         target_year=current.year if current else None,
         target_month=current.month if current else None,
         progress_pct=progress_pct(market, target_price),
+        instrument_currency=inst.currency,
     )

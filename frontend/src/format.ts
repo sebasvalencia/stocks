@@ -3,6 +3,10 @@ import i18n from "./i18n";
 
 export type DisplayCurrency = "COP" | "USD";
 
+export function asMoneyCurrency(value: string | null | undefined): DisplayCurrency {
+  return value === "USD" ? "USD" : "COP";
+}
+
 export function numberLocale(): string {
   const lng = i18n.language;
   if (lng.startsWith("en")) return "en-US";
@@ -30,6 +34,22 @@ export function rateFor(rates: FxRate[], year: number, month: number): number | 
   return n > 0 ? n : null;
 }
 
+export function convertMoney(
+  amount: number,
+  from: DisplayCurrency,
+  to: DisplayCurrency,
+  year: number | null | undefined,
+  month: number | null | undefined,
+  rates: FxRate[],
+): number | null {
+  if (from === to) return amount;
+  if (year == null || month == null) return null;
+  const rate = rateFor(rates, year, month);
+  if (rate == null) return null;
+  if (from === "COP" && to === "USD") return amount / rate;
+  return amount * rate;
+}
+
 export function convertCop(
   cop: number,
   currency: DisplayCurrency,
@@ -37,9 +57,5 @@ export function convertCop(
   month: number | null | undefined,
   rates: FxRate[],
 ): number | null {
-  if (currency === "COP") return cop;
-  if (year == null || month == null) return null;
-  const rate = rateFor(rates, year, month);
-  if (rate == null) return null;
-  return cop / rate;
+  return convertMoney(cop, "COP", currency, year, month, rates);
 }

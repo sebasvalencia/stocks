@@ -17,7 +17,7 @@ import {
 import BannerPrecios from "../BannerPrecios";
 import { api, type Instrument, type Summary, type Target, type TargetProgress, type Variation } from "../api";
 import { useCurrency } from "../currency";
-import { convertCop, formatMoney, formatNumber } from "../format";
+import { asMoneyCurrency, convertMoney, formatMoney, formatNumber } from "../format";
 import { chartTheme, useTheme } from "../theme";
 
 export default function SummaryPage() {
@@ -81,10 +81,24 @@ export default function SummaryPage() {
     return (summary?.positions ?? []).map((p) => {
       const last = p.last_price == null
         ? null
-        : convertCop(Number(p.last_price), currency, p.price_year, p.price_month, rates);
+        : convertMoney(
+            Number(p.last_price),
+            asMoneyCurrency(p.instrument_currency),
+            currency,
+            p.price_year,
+            p.price_month,
+            rates,
+          );
       const value = p.value == null
         ? null
-        : convertCop(Number(p.value), currency, p.price_year, p.price_month, rates);
+        : convertMoney(
+            Number(p.value),
+            asMoneyCurrency(p.instrument_currency),
+            currency,
+            p.price_year,
+            p.price_month,
+            rates,
+          );
       return { ...p, lastDisplay: last, valueDisplay: value };
     });
   }, [summary, currency, rates]);
@@ -128,12 +142,30 @@ export default function SummaryPage() {
     }
   }
 
+  const selectedNative = asMoneyCurrency(
+    instruments.find((i) => i.id === sel)?.currency ?? progress?.instrument_currency,
+  );
+
   const marketDisplay = progress?.last_price == null
     ? null
-    : convertCop(Number(progress.last_price), currency, progress.price_year, progress.price_month, rates);
+    : convertMoney(
+        Number(progress.last_price),
+        selectedNative,
+        currency,
+        progress.price_year,
+        progress.price_month,
+        rates,
+      );
   const targetDisplay = progress?.target == null
     ? null
-    : convertCop(Number(progress.target), currency, progress.target_year, progress.target_month, rates);
+    : convertMoney(
+        Number(progress.target),
+        selectedNative,
+        currency,
+        progress.target_year,
+        progress.target_month,
+        rates,
+      );
 
   const barTarget = useMemo(() => {
     if (marketDisplay == null || targetDisplay == null) return [];
@@ -193,7 +225,10 @@ export default function SummaryPage() {
                   : (p.valueDisplay / displayTotal) * 100;
               return (
                 <tr key={`${p.instrument_id}-${p.broker_id}`} className="border-b border-line">
-                  <td className="py-2">{p.instrument_name}</td>
+                  <td className="py-2">
+                    {p.instrument_name}{" "}
+                    <span className="text-xs text-muted">{p.instrument_currency}</span>
+                  </td>
                   <td>{p.broker_name}</td>
                   <td className="text-right">{formatNumber(Number(p.balance))}</td>
                   <td className="text-right">
@@ -325,7 +360,7 @@ export default function SummaryPage() {
             />
           </label>
           <label className="text-sm">
-            {t("summary.targetPrice", { currency: "COP" })}
+            {t("summary.targetPrice", { currency: selectedNative })}
             <input
               className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
@@ -381,7 +416,14 @@ export default function SummaryPage() {
             </thead>
             <tbody>
               {targets.map((o) => {
-                const shown = convertCop(Number(o.price), currency, o.year, o.month, rates);
+                const shown = convertMoney(
+                  Number(o.price),
+                  asMoneyCurrency(o.instrument_currency ?? selectedNative),
+                  currency,
+                  o.year,
+                  o.month,
+                  rates,
+                );
                 return (
                   <tr key={o.id} className="border-b border-line">
                     <td className="py-2">

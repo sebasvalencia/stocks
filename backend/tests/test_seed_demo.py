@@ -14,6 +14,9 @@ def test_seed_demo_replaces_catalog_with_fiction(db, client: TestClient) -> None
     names = {r["name"] for r in client.get("/instruments").json()}
     brokers = {r["name"] for r in client.get("/brokers").json()}
     assert names == set(DEMO_INSTRUMENTS)
+    by_name = {r["name"]: r["currency"] for r in client.get("/instruments").json()}
+    assert by_name["Nube Telecom"] == "USD"
+    assert by_name["Cafe Andino"] == "COP"
     assert brokers == set(DEMO_BROKERS)
     assert "Ecopetrol" not in names
     assert "D Corredores" not in brokers

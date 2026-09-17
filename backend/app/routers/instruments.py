@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Instrument
 from app.schemas import InstrumentIn, InstrumentOut, InstrumentUpdate
-from app.services.rules import validate_inactivate
+from app.services.rules import validate_currency_change, validate_inactivate
 
 router = APIRouter(prefix="/instruments", tags=["instruments"])
 
@@ -26,7 +26,7 @@ def get_one(instrument_id: int, db: Session = Depends(get_db)) -> Instrument:
 
 @router.post("", response_model=InstrumentOut, status_code=status.HTTP_201_CREATED)
 def create(body: InstrumentIn, db: Session = Depends(get_db)) -> Instrument:
-    row = Instrument(name=body.name.strip(), active=body.active)
+    row = Instrument(name=body.name.strip(), active=body.active, currency=body.currency)
     db.add(row)
     try:
         db.commit()
@@ -49,6 +49,9 @@ def update(
         row.active = body.active
     if body.name is not None:
         row.name = body.name.strip()
+    if body.currency is not None:
+        validate_currency_change(db, row, body.currency)
+        row.currency = body.currency
     try:
         db.commit()
     except IntegrityError:

@@ -1,7 +1,7 @@
 import { translateApiError } from "./apiErrors";
 
 export type Broker = { id: number; name: string };
-export type Instrument = { id: number; name: string; active: boolean };
+export type Instrument = { id: number; name: string; active: boolean; currency: "COP" | "USD" };
 export type Trade = {
   id: number;
   instrument_id: number;
@@ -13,6 +13,7 @@ export type Trade = {
   commission: string;
   instrument_name: string | null;
   broker_name: string | null;
+  instrument_currency: "COP" | "USD" | null;
 };
 export type PendingPrices = {
   year: number;
@@ -28,6 +29,7 @@ export type Price = {
   month: number;
   price: string;
   instrument_name: string | null;
+  instrument_currency: "COP" | "USD" | null;
 };
 export type Position = {
   instrument_id: number;
@@ -41,6 +43,7 @@ export type Position = {
   value: string | null;
   weight_pct: string | null;
   missing_price: boolean;
+  instrument_currency: "COP" | "USD";
 };
 export type Summary = { total: string; positions: Position[] };
 export type TradePayload = {
@@ -59,6 +62,7 @@ export type Target = {
   month: number;
   price: string;
   instrument_name: string | null;
+  instrument_currency: "COP" | "USD" | null;
 };
 export type TargetProgress = {
   instrument_id: number;
@@ -70,10 +74,12 @@ export type TargetProgress = {
   target_year: number | null;
   target_month: number | null;
   progress_pct: string | null;
+  instrument_currency: "COP" | "USD";
 };
 export type Variation = {
   instrument_id: number;
   instrument_name: string;
+  instrument_currency: "COP" | "USD";
   points: {
     year: number;
     month: number;
@@ -119,9 +125,9 @@ export const api = {
   createBroker: (name: string) =>
     req<Broker>("/brokers", { method: "POST", body: JSON.stringify({ name }) }),
   instruments: () => req<Instrument[]>("/instruments"),
-  createInstrument: (name: string) =>
-    req<Instrument>("/instruments", { method: "POST", body: JSON.stringify({ name, active: true }) }),
-  patchInstrument: (id: number, body: { active?: boolean; name?: string }) =>
+  createInstrument: (name: string, currency: "COP" | "USD" = "COP") =>
+    req<Instrument>("/instruments", { method: "POST", body: JSON.stringify({ name, active: true, currency }) }),
+  patchInstrument: (id: number, body: { active?: boolean; name?: string; currency?: "COP" | "USD" }) =>
     req<Instrument>(`/instruments/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   trades: () => req<Trade[]>("/trades"),
   createTrade: (body: TradePayload) =>

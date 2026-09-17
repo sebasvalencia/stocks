@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Broker, type Instrument, type Trade } from "../api";
 import { useCurrency } from "../currency";
-import { convertCop, formatMoney, formatNumber } from "../format";
+import { asMoneyCurrency, convertMoney, formatMoney, formatNumber } from "../format";
 
 export default function Trades() {
   const { t } = useTranslation();
@@ -82,12 +82,22 @@ export default function Trades() {
     }
   }
 
+  const selectedInstrument = instruments.find((i) => i.id === Number(instrumentId));
+  const nativeCurrency = selectedInstrument?.currency ?? "COP";
+
   function typeLabel(value: "buy" | "sell"): string {
     return value === "buy" ? t("trades.buy") : t("trades.sell");
   }
 
   function commissionText(row: Trade): string {
-    const converted = convertCop(Number(row.commission), currency, row.year, row.month, rates);
+    const converted = convertMoney(
+      Number(row.commission),
+      asMoneyCurrency(row.instrument_currency),
+      currency,
+      row.year,
+      row.month,
+      rates,
+    );
     if (converted == null) return t("fx.missing");
     return formatMoney(converted, currency);
   }
@@ -135,7 +145,7 @@ export default function Trades() {
               <option value="">{t("common.select")}</option>
               {instruments.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.name}
+                  {i.name} · {i.currency}
                   {i.active ? "" : ` (${t("common.inactive")})`}
                 </option>
               ))}
@@ -203,7 +213,7 @@ export default function Trades() {
             />
           </label>
           <label className="text-sm">
-            {t("trades.commission", { currency: "COP" })}
+            {t("trades.commission", { currency: nativeCurrency })}
             <input
               className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"

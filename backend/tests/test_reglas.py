@@ -20,7 +20,7 @@ def test_seed_catalog(client: TestClient) -> None:
     corr = client.get("/brokers").json()
     assert len(inst) == 11
     assert {c["name"] for c in corr} == {"D Corredores", "Trii"}
-    assert "IBITCO" not in {i["name"] for i in inst}
+    assert {i["currency"] for i in inst} == {"COP"}
 
 
 def test_partial_full_and_excess_sell(client: TestClient) -> None:
@@ -376,3 +376,48 @@ def test_fx_rate_missing_month_is_not_invented(client: TestClient) -> None:
     months = {r["month"] for r in rows}
     assert 1 in months
     assert 9 not in months
+
+
+def test_instrument_usd_currency_and_lock(client: TestClient) -> None:
+    r = client.post("/instruments", json={"name": "AAPL", "active": True, "currency": "USD"})
+    assert r.status_code == 201
+    apple = r.json()
+    assert apple["currency"] == "USD"
+    dcor = {b["name"]: b["id"] for b in client.get("/brokers").json()}["D Corredores"]
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": apple["id"],
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2026,
+            "month": 8,
+            "quantity": 10,
+            "commission": 1.5,
+        },
+    )
+    r = client.put(f"/instruments/{apple['id']}", json={"currency": "COP"})
+    assert r.status_code == 400
+    assert r.json()["detail"] == "cannot_change_currency"
+
+
+def test_summary_keeps_native_value_on_usd_holding(client: TestClient) -> None:
+    dcor = {b["name"]: b["id"] for b in client.get("/brokers").json()}["D Corredores"]
+    apple = client.post("/instruments", json={"name": "MSFT", "active": True, "currency": "USD"}).json()
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": apple["id"],
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2026,
+            "month": 8,
+            "quantity": 2,
+            "commission": 0,
+        },
+    )
+    client.put("/prices", json={"instrument_id": apple["id"], "year": 2026, "month": 8, "price": 400})
+    row = next(p for p in client.get("/summary").json()["positions"] if p["instrument_name"] == "MSFT")
+    assert row["instrument_currency"] == "USD"
+    assert Decimal(str(row["last_price"])) == Decimal("400")
+    assert Decimal(str(row["value"])) == Decimal("800")

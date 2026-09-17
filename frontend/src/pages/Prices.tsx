@@ -99,7 +99,10 @@ export default function Prices() {
           <tbody>
             {instruments.map((inst) => (
               <tr key={inst.id} className="border-b border-line">
-                <td className="whitespace-nowrap py-1 pr-2 font-medium">{inst.name}</td>
+                <td className="whitespace-nowrap py-1 pr-2 font-medium">
+                  {inst.name}{" "}
+                  <span className="text-[10px] font-normal text-muted">{inst.currency}</span>
+                </td>
                 {months.map((_, idx) => {
                   const month = idx + 1;
                   const key = `${inst.id}-${month}`;

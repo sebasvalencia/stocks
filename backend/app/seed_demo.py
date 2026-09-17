@@ -34,7 +34,10 @@ def seed_demo(db: Session) -> None:
     """Replace catalog and movements with a small fictional portfolio for the README video."""
     reset_demo(db)
     brokers = {name: Broker(name=name) for name in DEMO_BROKERS}
-    instruments = {name: Instrument(name=name, active=True) for name in DEMO_INSTRUMENTS}
+    instruments = {
+        name: Instrument(name=name, active=True, currency="USD" if name == "Nube Telecom" else "COP")
+        for name in DEMO_INSTRUMENTS
+    }
     db.add_all([*brokers.values(), *instruments.values()])
     db.flush()
 
@@ -118,7 +121,7 @@ def seed_demo(db: Session) -> None:
                 year=2025,
                 month=11,
                 quantity=_dec(90),
-                commission=_dec(4100),
+                commission=_dec("4.10"),
             ),
         ]
     )
@@ -163,15 +166,15 @@ def seed_demo(db: Session) -> None:
         8: "23300",
     }
     nube_prices = {
-        1: "3100",
-        2: "3180",
-        3: "3250",
-        4: "3220",
-        5: "3300",
-        6: "3380",
-        7: "3450",
-        8: "3520",
-        9: "3600",
+        1: "31.00",
+        2: "31.80",
+        3: "32.50",
+        4: "32.20",
+        5: "33.00",
+        6: "33.80",
+        7: "34.50",
+        8: "35.20",
+        9: "36.00",
     }
     for month, price in cafe_prices.items():
         db.add(MonthlyPrice(instrument_id=cafe.id, year=2026, month=month, price=_dec(price)))

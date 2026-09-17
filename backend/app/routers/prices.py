@@ -17,6 +17,7 @@ def _out(row: MonthlyPrice) -> PriceOut:
         month=row.month,
         price=row.price,
         instrument_name=row.instrument.name if row.instrument else None,
+        instrument_currency=row.instrument.currency if row.instrument else None,
     )
 
 

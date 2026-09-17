@@ -27,6 +27,7 @@ const EXACT: Record<string, string> = {
   cannot_delete_broker: "errors.cannotDeleteBroker",
   cannot_delete_instrument: "errors.cannotDeleteInstrument",
   cannot_delete_trade: "errors.cannotDeleteTrade",
+  cannot_change_currency: "errors.cannotChangeCurrency",
   sell_exceeds_balance: "errors.sellExceedsBalance",
 };
 

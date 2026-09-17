@@ -28,11 +28,13 @@ class BrokerOut(BaseModel):
 class InstrumentIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     active: bool = True
+    currency: Literal["COP", "USD"] = "COP"
 
 
 class InstrumentUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     active: bool | None = None
+    currency: Literal["COP", "USD"] | None = None
 
 
 class InstrumentOut(BaseModel):
@@ -41,6 +43,7 @@ class InstrumentOut(BaseModel):
     id: int
     name: str
     active: bool
+    currency: str
 
 
 class TradeIn(BaseModel):
@@ -66,6 +69,7 @@ class TradeOut(BaseModel):
     commission: VisibleDecimal
     instrument_name: str | None = None
     broker_name: str | None = None
+    instrument_currency: str | None = None
 
 
 class PriceIn(BaseModel):
@@ -84,6 +88,7 @@ class PriceOut(BaseModel):
     month: int
     price: VisibleDecimal
     instrument_name: str | None = None
+    instrument_currency: str | None = None
 
 
 class MissingPriceOut(BaseModel):
@@ -106,6 +111,7 @@ class BalanceOut(BaseModel):
     broker_name: str
     active: bool
     balance: VisibleDecimal
+    instrument_currency: str
 
 
 class PositionOut(BaseModel):
@@ -120,6 +126,7 @@ class PositionOut(BaseModel):
     value: VisibleDecimal | None
     weight_pct: VisibleDecimal | None
     missing_price: bool
+    instrument_currency: str
 
 
 class SummaryOut(BaseModel):
@@ -143,6 +150,7 @@ class TargetOut(BaseModel):
     month: int
     price: VisibleDecimal
     instrument_name: str | None = None
+    instrument_currency: str | None = None
 
 
 class TargetProgressOut(BaseModel):
@@ -155,6 +163,7 @@ class TargetProgressOut(BaseModel):
     target_year: int | None
     target_month: int | None
     progress_pct: VisibleDecimal | None
+    instrument_currency: str
 
 
 class VariationPointOut(BaseModel):
@@ -167,6 +176,7 @@ class VariationPointOut(BaseModel):
 class VariationOut(BaseModel):
     instrument_id: int
     instrument_name: str
+    instrument_currency: str
     points: list[VariationPointOut]
 
 

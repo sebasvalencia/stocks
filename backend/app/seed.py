@@ -32,7 +32,7 @@ def seed(db: Session) -> None:
     existing_i = {n for n in db.scalars(select(Instrument.name)).all()}
     for name in INSTRUMENTS:
         if name not in existing_i:
-            db.add(Instrument(name=name, active=True))
+            db.add(Instrument(name=name, active=True, currency="COP"))
     db.commit()
 
 
