@@ -57,23 +57,23 @@ export default function FxRates() {
   return (
     <form onSubmit={save} className="space-y-4">
       {error && (
-        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+        <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">{error}</p>
       )}
-      {ok && <p className="rounded border border-moss/30 bg-moss/10 px-3 py-2 text-sm">{ok}</p>}
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      {ok && <p className="rounded border border-up/40 bg-up/10 px-3 py-2 text-sm text-up">{ok}</p>}
+      <section className="rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("fx.title")}</h2>
-        <p className="mt-1 text-sm text-ink/60">{t("fx.hint")}</p>
+        <p className="mt-1 text-sm text-muted">{t("fx.hint")}</p>
         <div className="mt-4 flex items-end gap-3">
           <label className="text-sm">
             {t("common.year")}
             <input
-              className="ml-2 rounded border border-ink/20 px-2 py-1"
+              className="ml-2 rounded border border-line px-2 py-1"
               type="number"
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
             />
           </label>
-          <button className="rounded bg-rust px-4 py-2 text-sm text-white" type="submit">
+          <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit">
             {t("common.saveChanges")}
           </button>
         </div>
@@ -85,7 +85,7 @@ export default function FxRates() {
                   <th
                     key={m}
                     className={`px-1 text-center ${
-                      year === current.year && idx + 1 === current.month ? "text-rust" : ""
+                      year === current.year && idx + 1 === current.month ? "text-accent" : ""
                     }`}
                   >
                     {m}
@@ -103,7 +103,7 @@ export default function FxRates() {
                     <td key={month}>
                       <input
                         className={`w-24 rounded border px-1 py-1 text-right ${
-                          gap ? "border-amber-400 bg-amber-50" : "border-ink/15"
+                          gap ? "border-warn bg-warn/10" : "border-line"
                         }`}
                         value={value(month)}
                         onChange={(e) => setDraft((d) => ({ ...d, [String(month)]: e.target.value }))}

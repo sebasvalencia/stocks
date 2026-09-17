@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import { useCurrency } from "./currency";
+import type { DisplayCurrency } from "./format";
 import { LANGS, setLanguage, type Lang } from "./i18n";
+import { THEMES, useTheme } from "./theme";
 import Catalog from "./pages/Catalog";
 import FxRates from "./pages/FxRates";
 import Prices from "./pages/Prices";
@@ -10,19 +12,22 @@ import Trades from "./pages/Trades";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium ${
-    isActive ? "bg-white text-ink" : "text-paper/90 hover:bg-white/15"
+    isActive ? "bg-accent text-ink" : "text-muted hover:bg-surface-2 hover:text-ink"
   }`;
 
-const pill = (active: boolean) =>
-  `rounded px-2 py-1 ${active ? "bg-white text-ink" : "text-paper/90 hover:bg-white/15"}`;
+const CURRENCIES: DisplayCurrency[] = ["COP", "USD"];
+
+const compactSelect =
+  "rounded border border-line bg-surface-2 px-2 py-1 text-xs text-ink";
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const { currency, setCurrency } = useCurrency();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-rust text-paper shadow-md">
+    <div className="min-h-screen bg-navy text-ink">
+      <header className="border-b border-line bg-surface text-ink shadow-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <h1 className="font-display text-2xl tracking-wide">{t("app.title")}</h1>
           <div className="flex flex-wrap items-center gap-3">
@@ -43,25 +48,42 @@ export default function App() {
                 {t("nav.fx")}
               </NavLink>
             </nav>
-            <div className="flex gap-1 text-xs" role="group" aria-label="Currency">
-              {(["COP", "USD"] as const).map((c) => (
-                <button key={c} type="button" className={pill(currency === c)} onClick={() => setCurrency(c)}>
+            <select
+              aria-label={t("theme.label")}
+              className={compactSelect}
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as (typeof THEMES)[number])}
+            >
+              {THEMES.map((mode) => (
+                <option key={mode} value={mode}>
+                  {t(`theme.${mode}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label={t("currency.label")}
+              className={compactSelect}
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as DisplayCurrency)}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
                   {t(`currency.${c.toLowerCase()}`)}
-                </button>
+                </option>
               ))}
-            </div>
-            <div className="flex gap-1 text-xs" role="group" aria-label="Language">
+            </select>
+            <select
+              aria-label={t("lang.label")}
+              className={compactSelect}
+              value={LANGS.includes(i18n.language as Lang) ? i18n.language : "es"}
+              onChange={(e) => setLanguage(e.target.value as Lang)}
+            >
               {LANGS.map((lng) => (
-                <button
-                  key={lng}
-                  type="button"
-                  className={pill(i18n.language === lng)}
-                  onClick={() => setLanguage(lng as Lang)}
-                >
+                <option key={lng} value={lng}>
                   {t(`lang.${lng}`)}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         </div>
       </header>

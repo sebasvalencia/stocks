@@ -7,8 +7,9 @@
     "catalog": "Catalog",
     "fx": "FX"
   },
-  "lang": { "es": "ES", "en": "EN", "it": "IT" },
-  "currency": { "cop": "COP", "usd": "USD" },
+  "lang": { "label": "Language", "es": "Español", "en": "English", "it": "Italiano" },
+  "currency": { "label": "Currency", "cop": "COP", "usd": "USD" },
+  "theme": { "label": "Theme", "dark": "Dark", "light": "Light" },
   "common": {
     "year": "Year",
     "month": "Month",

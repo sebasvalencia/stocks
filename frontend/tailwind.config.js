@@ -4,10 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#1c1915",
-        paper: "#f6f1e8",
-        rust: "#c45c26",
-        moss: "#3d5a45",
+        navy: "rgb(var(--navy) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        "surface-2": "rgb(var(--surface-2) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        up: "rgb(var(--up) / <alpha-value>)",
+        down: "rgb(var(--down) / <alpha-value>)",
+        warn: "rgb(var(--warn) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["IBM Plex Sans", "Segoe UI", "sans-serif"],

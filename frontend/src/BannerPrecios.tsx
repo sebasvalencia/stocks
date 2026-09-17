@@ -32,7 +32,7 @@ export default function BannerPrecios({ linkToPrices = false, reload = 0 }: Prop
       : t("banner.many", { count: data.pending, month: monthName, total: data.total_active });
 
   return (
-    <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+    <p className="rounded border border-warn/40 bg-warn/10 px-3 py-2 text-sm text-warn">
       {text} {names}.
       {linkToPrices && (
         <>

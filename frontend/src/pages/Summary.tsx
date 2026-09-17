@@ -18,12 +18,13 @@ import BannerPrecios from "../BannerPrecios";
 import { api, type Instrument, type Summary, type Target, type TargetProgress, type Variation } from "../api";
 import { useCurrency } from "../currency";
 import { convertCop, formatMoney, formatNumber } from "../format";
-
-const COLORS = ["#c45c26", "#3d5a45", "#1c1915", "#8b6914", "#6b3fa0", "#2b6cb0", "#9b2c2c"];
+import { chartTheme, useTheme } from "../theme";
 
 export default function SummaryPage() {
   const { t } = useTranslation();
   const { currency, rates } = useCurrency();
+  const { theme } = useTheme();
+  const CHART = chartTheme(theme);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [sel, setSel] = useState<number | "">("");
@@ -165,17 +166,17 @@ export default function SummaryPage() {
     <div className="space-y-6">
       <BannerPrecios linkToPrices />
       {error && (
-        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+        <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">{error}</p>
       )}
-      <section className="rounded-lg bg-white p-5 shadow-sm">
-        <p className="text-sm uppercase tracking-wide text-ink/50">{t("summary.total")}</p>
+      <section className="rounded-lg bg-surface p-5 shadow-sm">
+        <p className="text-sm uppercase tracking-wide text-muted">{t("summary.total")}</p>
         <p className="font-display text-4xl">{formatMoney(displayTotal, currency)}</p>
       </section>
-      <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
+      <section className="overflow-x-auto rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("summary.positions")}</h2>
         <table className="mt-3 w-full text-left text-sm">
           <thead>
-            <tr className="border-b text-ink/60">
+            <tr className="border-b border-line text-muted">
               <th className="py-2">{t("summary.instrument")}</th>
               <th>{t("summary.broker")}</th>
               <th className="text-right">{t("summary.balance")}</th>
@@ -191,7 +192,7 @@ export default function SummaryPage() {
                   ? null
                   : (p.valueDisplay / displayTotal) * 100;
               return (
-                <tr key={`${p.instrument_id}-${p.broker_id}`} className="border-b border-ink/10">
+                <tr key={`${p.instrument_id}-${p.broker_id}`} className="border-b border-line">
                   <td className="py-2">{p.instrument_name}</td>
                   <td>{p.broker_name}</td>
                   <td className="text-right">{formatNumber(Number(p.balance))}</td>
@@ -206,7 +207,9 @@ export default function SummaryPage() {
                       : moneyOrMissing(p.valueDisplay, t("fx.missing"))}
                   </td>
                   <td className="text-right">
-                    {weight == null ? t("common.dash") : `${weight.toFixed(1)}%`}
+                    {weight == null
+                      ? t("common.dash")
+                      : `${formatNumber(weight, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
                   </td>
                 </tr>
               );
@@ -215,30 +218,45 @@ export default function SummaryPage() {
         </table>
       </section>
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-lg bg-white p-4 shadow-sm">
+        <section className="rounded-lg bg-surface p-4 shadow-sm">
           <h2 className="font-display text-xl">{t("summary.pieTitle")}</h2>
           {pieData.length === 0 ? (
-            <p className="mt-6 text-sm text-ink/50">{t("summary.pieEmpty")}</p>
+            <p className="mt-6 text-sm text-muted">{t("summary.pieEmpty")}</p>
           ) : (
             <div className="h-72">
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={90}
+                    labelLine={{ stroke: CHART.tick }}
+                    label={({ percent }: { percent?: number }) =>
+                      `${formatNumber((percent ?? 0) * 100, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}%`
+                    }
+                  >
                     {pieData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      <Cell key={i} fill={CHART.colors[i % CHART.colors.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatMoney(v, currency)} />
+                  <Tooltip
+                    formatter={(v: number) => formatMoney(v, currency)}
+                    {...CHART.tooltip}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           )}
         </section>
-        <section className="rounded-lg bg-white p-4 shadow-sm">
+        <section className="rounded-lg bg-surface p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-xl">{t("summary.variationTitle")}</h2>
             <select
-              className="rounded border border-ink/20 px-2 py-1 text-sm"
+              className="rounded border border-line px-2 py-1 text-sm"
               value={sel}
               onChange={(e) => setSel(Number(e.target.value))}
               disabled={active.length === 0}
@@ -251,27 +269,27 @@ export default function SummaryPage() {
             </select>
           </div>
           {lineData.length === 0 ? (
-            <p className="mt-6 text-sm text-ink/50">{t("summary.variationEmpty")}</p>
+            <p className="mt-6 text-sm text-muted">{t("summary.variationEmpty")}</p>
           ) : (
             <div className="h-72">
               <ResponsiveContainer>
                 <LineChart data={lineData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="periodo" />
-                  <YAxis unit="%" />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="variacion" stroke="#c45c26" dot />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                  <XAxis dataKey="periodo" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
+                  <YAxis unit="%" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
+                  <Tooltip {...CHART.tooltip} />
+                  <Line type="monotone" dataKey="variacion" stroke={CHART.series} dot />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
         </section>
       </div>
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      <section className="rounded-lg bg-surface p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-xl">{t("summary.targetTitle")}</h2>
           <select
-            className="rounded border border-ink/20 px-2 py-1 text-sm"
+            className="rounded border border-line px-2 py-1 text-sm"
             value={sel}
             onChange={(e) => setSel(Number(e.target.value))}
             disabled={active.length === 0}
@@ -287,7 +305,7 @@ export default function SummaryPage() {
           <label className="text-sm">
             {t("common.year")}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               value={objYear}
               onChange={(e) => setObjYear(e.target.value)}
@@ -297,7 +315,7 @@ export default function SummaryPage() {
           <label className="text-sm">
             {t("common.month")}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               min={1}
               max={12}
@@ -309,7 +327,7 @@ export default function SummaryPage() {
           <label className="text-sm">
             {t("summary.targetPrice", { currency: "COP" })}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               min={0.0001}
               step="any"
@@ -319,34 +337,34 @@ export default function SummaryPage() {
             />
           </label>
           <div className="flex items-end">
-            <button className="rounded bg-rust px-4 py-2 text-sm text-white" type="submit" disabled={sel === ""}>
+            <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit" disabled={sel === ""}>
               {t("summary.saveTarget")}
             </button>
           </div>
         </form>
         {pctProgress == null ? (
-          <p className="mt-4 text-sm text-ink/50">{t("summary.targetEmpty")}</p>
+          <p className="mt-4 text-sm text-muted">{t("summary.targetEmpty")}</p>
         ) : (
           <div className="mt-4 grid gap-6 lg:grid-cols-2">
             <div>
-              <p className="text-sm text-ink/50">{t("summary.targetVs")}</p>
+              <p className="text-sm text-muted">{t("summary.targetVs")}</p>
               <p className="font-display text-3xl">{pctProgress.toFixed(1)}%</p>
-              <p className="mt-1 text-sm text-ink/60">
+              <p className="mt-1 text-sm text-muted">
                 {moneyOrMissing(marketDisplay, t("fx.missing"))} / {moneyOrMissing(targetDisplay, t("fx.missing"))}
               </p>
-              <div className="mt-3 h-3 overflow-hidden rounded bg-ink/10">
-                <div className="h-full bg-rust" style={{ width: `${barPct}%` }} />
+              <div className="mt-3 h-3 overflow-hidden rounded bg-surface-2">
+                <div className="h-full bg-accent" style={{ width: `${barPct}%` }} />
               </div>
             </div>
             {barTarget.length > 0 && (
               <div className="h-48">
                 <ResponsiveContainer>
                   <BarChart data={barTarget}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(v: number) => formatMoney(v, currency)} />
-                    <Bar dataKey="valor" fill="#c45c26" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+                    <XAxis dataKey="name" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
+                    <YAxis tick={{ fill: CHART.tick }} stroke={CHART.grid} />
+                    <Tooltip formatter={(v: number) => formatMoney(v, currency)} {...CHART.tooltip} />
+                    <Bar dataKey="valor" fill={CHART.series} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -356,7 +374,7 @@ export default function SummaryPage() {
         {targets.length > 0 && (
           <table className="mt-6 w-full text-left text-sm">
             <thead>
-              <tr className="border-b text-ink/60">
+              <tr className="border-b border-line text-muted">
                 <th className="py-2">{t("summary.period")}</th>
                 <th className="text-right">{t("summary.target")}</th>
               </tr>
@@ -365,7 +383,7 @@ export default function SummaryPage() {
               {targets.map((o) => {
                 const shown = convertCop(Number(o.price), currency, o.year, o.month, rates);
                 return (
-                  <tr key={o.id} className="border-b border-ink/10">
+                  <tr key={o.id} className="border-b border-line">
                     <td className="py-2">
                       {o.year}-{String(o.month).padStart(2, "0")}
                     </td>

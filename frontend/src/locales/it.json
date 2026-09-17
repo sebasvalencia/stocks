@@ -7,8 +7,9 @@
     "catalog": "Catalogo",
     "fx": "TRM"
   },
-  "lang": { "es": "ES", "en": "EN", "it": "IT" },
-  "currency": { "cop": "COP", "usd": "USD" },
+  "lang": { "label": "Lingua", "es": "Español", "en": "English", "it": "Italiano" },
+  "currency": { "label": "Valuta", "cop": "COP", "usd": "USD" },
+  "theme": { "label": "Tema", "dark": "Scuro", "light": "Chiaro" },
   "common": {
     "year": "Anno",
     "month": "Mese",

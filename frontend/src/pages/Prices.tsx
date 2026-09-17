@@ -62,24 +62,24 @@ export default function Prices() {
     <form onSubmit={save} className="space-y-4">
       <BannerPrecios reload={notice} />
       {error && (
-        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+        <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">{error}</p>
       )}
-      {ok && <p className="rounded border border-moss/30 bg-moss/10 px-3 py-2 text-sm">{ok}</p>}
+      {ok && <p className="rounded border border-up/40 bg-up/10 px-3 py-2 text-sm text-up">{ok}</p>}
       <div className="flex items-end gap-3">
         <label className="text-sm">
           {t("common.year")}
           <input
-            className="ml-2 rounded border border-ink/20 px-2 py-1"
+            className="ml-2 rounded border border-line px-2 py-1"
             type="number"
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
           />
         </label>
-        <button className="rounded bg-rust px-4 py-2 text-sm text-white" type="submit">
+        <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit">
           {t("common.saveChanges")}
         </button>
       </div>
-      <div className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
+      <div className="overflow-x-auto rounded-lg bg-surface p-4 shadow-sm">
         <table className="w-full text-left text-xs">
           <thead>
             <tr className="border-b">
@@ -88,7 +88,7 @@ export default function Prices() {
                 <th
                   key={m}
                   className={`px-1 text-center ${
-                    year === current.year && idx + 1 === current.month ? "text-rust" : ""
+                    year === current.year && idx + 1 === current.month ? "text-accent" : ""
                   }`}
                 >
                   {m}
@@ -98,7 +98,7 @@ export default function Prices() {
           </thead>
           <tbody>
             {instruments.map((inst) => (
-              <tr key={inst.id} className="border-b border-ink/10">
+              <tr key={inst.id} className="border-b border-line">
                 <td className="whitespace-nowrap py-1 pr-2 font-medium">{inst.name}</td>
                 {months.map((_, idx) => {
                   const month = idx + 1;
@@ -112,7 +112,7 @@ export default function Prices() {
                     <td key={month}>
                       <input
                         className={`w-20 rounded border px-1 py-1 text-right ${
-                          gap ? "border-amber-400 bg-amber-50" : "border-ink/15"
+                          gap ? "border-warn bg-warn/10" : "border-line"
                         }`}
                         value={value(inst.id, month)}
                         onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}

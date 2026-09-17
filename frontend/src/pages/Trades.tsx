@@ -117,9 +117,9 @@ export default function Trades() {
   return (
     <div className="space-y-6">
       {error && (
-        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+        <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">{error}</p>
       )}
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      <section className="rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">
           {editingId == null ? t("trades.register") : t("trades.edit")}
         </h2>
@@ -127,7 +127,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("trades.instrument")}
             <select
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               value={instrumentId}
               onChange={(e) => setInstrumentId(e.target.value)}
               required
@@ -144,7 +144,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("trades.broker")}
             <select
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               value={brokerId}
               onChange={(e) => setBrokerId(e.target.value)}
               required
@@ -160,7 +160,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("trades.type")}
             <select
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               value={type}
               onChange={(e) => setType(e.target.value as "buy" | "sell")}
             >
@@ -171,7 +171,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("common.year")}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               value={year}
               onChange={(e) => setYear(e.target.value)}
@@ -181,7 +181,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("common.monthOptional")}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               min={1}
               max={12}
@@ -193,7 +193,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("trades.quantity")}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               min={0.000001}
               step="any"
@@ -205,7 +205,7 @@ export default function Trades() {
           <label className="text-sm">
             {t("trades.commission", { currency: "COP" })}
             <input
-              className="mt-1 w-full rounded border border-ink/20 px-2 py-2"
+              className="mt-1 w-full rounded border border-line px-2 py-2"
               type="number"
               min={0}
               step="any"
@@ -214,12 +214,12 @@ export default function Trades() {
             />
           </label>
           <div className="flex gap-2 sm:col-span-3">
-            <button className="rounded bg-rust px-4 py-2 text-sm text-white" type="submit">
+            <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit">
               {editingId == null ? t("common.save") : t("common.saveChanges")}
             </button>
             {editingId != null && (
               <button
-                className="rounded border border-ink/20 px-4 py-2 text-sm"
+                className="rounded border border-line px-4 py-2 text-sm"
                 type="button"
                 onClick={resetForm}
               >
@@ -229,11 +229,11 @@ export default function Trades() {
           </div>
         </form>
       </section>
-      <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
+      <section className="overflow-x-auto rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("trades.history")}</h2>
         <table className="mt-3 w-full text-left text-sm">
           <thead>
-            <tr className="border-b text-ink/60">
+            <tr className="border-b border-line text-muted">
               <th className="py-2">{t("common.year")}</th>
               <th>{t("common.month")}</th>
               <th>{t("trades.instrument")}</th>
@@ -246,7 +246,7 @@ export default function Trades() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-b border-ink/10">
+              <tr key={r.id} className="border-b border-line">
                 <td className="py-2">{r.year}</td>
                 <td>{r.month ?? t("common.dash")}</td>
                 <td>{r.instrument_name}</td>
@@ -255,10 +255,10 @@ export default function Trades() {
                 <td className="text-right">{formatNumber(Number(r.quantity))}</td>
                 <td className="text-right">{commissionText(r)}</td>
                 <td className="space-x-3 text-right">
-                  <button type="button" className="text-rust underline" onClick={() => edit(r)}>
+                  <button type="button" className="text-accent underline" onClick={() => edit(r)}>
                     {t("common.edit")}
                   </button>
-                  <button type="button" className="text-ink/60 underline" onClick={() => remove(r)}>
+                  <button type="button" className="text-muted underline" onClick={() => remove(r)}>
                     {t("common.delete")}
                   </button>
                 </td>

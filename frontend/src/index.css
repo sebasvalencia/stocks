@@ -2,8 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --navy: 11 17 32;
+  --surface: 17 24 39;
+  --surface-2: 31 41 59;
+  --ink: 248 250 252;
+  --muted: 148 163 184;
+  --accent: 59 130 246;
+  --up: 16 185 129;
+  --down: 239 68 68;
+  --warn: 245 158 11;
+  --line: 51 65 85;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --navy: 248 250 252;
+  --surface: 255 255 255;
+  --surface-2: 241 245 249;
+  --ink: 15 23 42;
+  --muted: 100 116 139;
+  --accent: 37 99 235;
+  --up: 5 150 105;
+  --down: 220 38 38;
+  --warn: 217 119 6;
+  --line: 226 232 240;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
-  background: #f6f1e8;
-  color: #1c1915;
+  background: rgb(var(--navy));
+  color: rgb(var(--ink));
+}
+
+input,
+select,
+textarea {
+  background-color: rgb(var(--surface-2));
+  color: rgb(var(--ink));
 }

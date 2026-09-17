@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
@@ -21,6 +21,10 @@ INSTRUMENTS = [
 
 
 def seed(db: Session) -> None:
+    if db.scalar(select(func.count()).select_from(Broker)) or db.scalar(
+        select(func.count()).select_from(Instrument)
+    ):
+        return
     existing_b = {n for n in db.scalars(select(Broker.name)).all()}
     for name in BROKERS:
         if name not in existing_b:

@@ -57,21 +57,21 @@ export default function Catalog() {
   return (
     <div className="grid gap-8 md:grid-cols-2">
       {error && (
-        <p className="md:col-span-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p className="md:col-span-2 rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
           {error}
         </p>
       )}
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      <section className="rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("catalog.instruments")}</h2>
         <form onSubmit={addInstrument} className="mt-3 flex gap-2">
           <input
-            className="flex-1 rounded border border-ink/20 px-3 py-2"
+            className="flex-1 rounded border border-line px-3 py-2"
             value={instrumentName}
             onChange={(e) => setInstrumentName(e.target.value)}
             placeholder={t("common.name")}
             required
           />
-          <button className="rounded bg-moss px-3 py-2 text-sm text-white" type="submit">
+          <button className="rounded bg-up px-3 py-2 text-sm text-white" type="submit">
             {t("common.add")}
           </button>
         </form>
@@ -80,13 +80,13 @@ export default function Catalog() {
             <li key={row.id} className="flex items-center justify-between py-2">
               <span>
                 {row.name}{" "}
-                <span className="text-xs text-ink/50">
+                <span className="text-xs text-muted">
                   {row.active ? t("common.active") : t("common.inactive")}
                 </span>
               </span>
               <button
                 type="button"
-                className="text-sm text-rust underline"
+                className="text-sm text-accent underline"
                 onClick={() => toggleActive(row)}
               >
                 {row.active ? t("common.inactivate") : t("common.activate")}
@@ -95,17 +95,17 @@ export default function Catalog() {
           ))}
         </ul>
       </section>
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      <section className="rounded-lg bg-surface p-4 shadow-sm">
         <h2 className="font-display text-xl">{t("catalog.brokers")}</h2>
         <form onSubmit={addBroker} className="mt-3 flex gap-2">
           <input
-            className="flex-1 rounded border border-ink/20 px-3 py-2"
+            className="flex-1 rounded border border-line px-3 py-2"
             value={brokerName}
             onChange={(e) => setBrokerName(e.target.value)}
             placeholder={t("common.name")}
             required
           />
-          <button className="rounded bg-moss px-3 py-2 text-sm text-white" type="submit">
+          <button className="rounded bg-up px-3 py-2 text-sm text-white" type="submit">
             {t("common.add")}
           </button>
         </form>

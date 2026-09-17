@@ -4,10 +4,12 @@
 #   .\backups\backup.ps1
 #   .\backups\backup.ps1 -Keep 12
 #   .\backups\backup.ps1 -Restore acciones_2026-09-10_1431.sql
-#   .\backups\backup.ps1 -Restore acciones_2026-09-10_1431.sql -Force
+#   .\backups\backup.ps1 -Restore demo\demo.sql -Force
+#   .\backups\backup.ps1 -Out demo\demo.sql
 
 param(
     [string]$Restore,
+    [string]$Out,
     [switch]$Force,
     [int]$Keep = 0
 )
@@ -36,7 +38,7 @@ function Resolve-DumpPath([string]$Path) {
     if ([System.IO.Path]::IsPathRooted($Path) -and (Test-Path $Path)) {
         return (Resolve-Path $Path).Path
     }
-    foreach ($base in @($BackupDir, $Root, (Get-Location).Path)) {
+    foreach ($base in @($BackupDir, (Join-Path $Root "demo"), $Root, (Get-Location).Path)) {
         $candidate = Join-Path $base $Path
         if (Test-Path $candidate) {
             return (Resolve-Path $candidate).Path
@@ -92,7 +94,12 @@ if ($Restore) {
 }
 
 $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
-$out = Join-Path $BackupDir "acciones_$stamp.sql"
+if ($Out) {
+    $out = if ([System.IO.Path]::IsPathRooted($Out)) { $Out } else { Join-Path $Root $Out }
+    New-Item -ItemType Directory -Force (Split-Path -Parent $out) | Out-Null
+} else {
+    $out = Join-Path $BackupDir "acciones_$stamp.sql"
+}
 $remote = "/tmp/acciones_dump.sql"
 
 docker compose exec -T db pg_dump -U $User -d $DbName --clean --if-exists --no-owner --no-acl -f $remote
