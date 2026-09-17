@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import brokers, fx, instruments, prices, summary, targets, trades
 
-app = FastAPI(title="Acciones", version="0.1.0")
+app = FastAPI(title="Stocks", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

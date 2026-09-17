@@ -3,7 +3,7 @@
 # Usage:
 #   .\backups\backup.ps1
 #   .\backups\backup.ps1 -Keep 12
-#   .\backups\backup.ps1 -Restore acciones_2026-09-10_1431.sql
+#   .\backups\backup.ps1 -Restore stocks_2026-09-10_1431.sql
 #   .\backups\backup.ps1 -Restore demo\demo.sql -Force
 #   .\backups\backup.ps1 -Out demo\demo.sql
 
@@ -52,8 +52,11 @@ if (-not (Test-Path $envFile)) {
     throw "Missing .env. Copy .env.example to .env and set POSTGRES_USER / POSTGRES_DB."
 }
 $dotEnv = Get-DotEnv $envFile
-$User = if ($dotEnv["POSTGRES_USER"]) { $dotEnv["POSTGRES_USER"] } else { "acciones" }
-$DbName = if ($dotEnv["POSTGRES_DB"]) { $dotEnv["POSTGRES_DB"] } else { "acciones" }
+if (-not $dotEnv["POSTGRES_USER"] -or -not $dotEnv["POSTGRES_DB"]) {
+    throw "POSTGRES_USER and POSTGRES_DB must be set in .env"
+}
+$User = $dotEnv["POSTGRES_USER"]
+$DbName = $dotEnv["POSTGRES_DB"]
 
 function Wait-Db {
     docker compose up -d db | Out-Null
@@ -83,7 +86,7 @@ if ($Restore) {
         }
     }
 
-    $remote = "/tmp/acciones_restore.sql"
+    $remote = "/tmp/stocks_restore.sql"
     docker compose cp $file "db:${remote}"
     Assert-Exit "Copy dump into container"
     docker compose exec -T db psql -U $User -d $DbName -v ON_ERROR_STOP=1 -f $remote
@@ -98,9 +101,9 @@ if ($Out) {
     $out = if ([System.IO.Path]::IsPathRooted($Out)) { $Out } else { Join-Path $Root $Out }
     New-Item -ItemType Directory -Force (Split-Path -Parent $out) | Out-Null
 } else {
-    $out = Join-Path $BackupDir "acciones_$stamp.sql"
+    $out = Join-Path $BackupDir "stocks_$stamp.sql"
 }
-$remote = "/tmp/acciones_dump.sql"
+$remote = "/tmp/stocks_dump.sql"
 
 docker compose exec -T db pg_dump -U $User -d $DbName --clean --if-exists --no-owner --no-acl -f $remote
 Assert-Exit "pg_dump"
@@ -109,7 +112,8 @@ Assert-Exit "Copy dump out of container"
 docker compose exec -T db rm -f $remote | Out-Null
 
 if ($Keep -gt 0) {
-    Get-ChildItem $BackupDir -Filter "acciones_*.sql" |
+    Get-ChildItem $BackupDir -Filter "*.sql" |
+        Where-Object { $_.Name -match '^(stocks|acciones)_' } |
         Sort-Object LastWriteTime -Descending |
         Select-Object -Skip $Keep |
         Remove-Item -Force

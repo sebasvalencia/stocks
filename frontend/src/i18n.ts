@@ -6,14 +6,14 @@ import it from "./locales/it.json";
 
 export const LANGS = ["es", "en", "it"] as const;
 export type Lang = (typeof LANGS)[number];
-export const LANG_KEY = "acciones.lang";
+export const LANG_KEY = "stocks.lang";
 
 export function isLang(value: string): value is Lang {
   return (LANGS as readonly string[]).includes(value);
 }
 
 function initialLang(): Lang {
-  const stored = localStorage.getItem(LANG_KEY);
+  const stored = localStorage.getItem(LANG_KEY) ?? localStorage.getItem("acciones.lang");
   if (stored && isLang(stored)) return stored;
   const nav = navigator.language.toLowerCase();
   if (nav.startsWith("en")) return "en";

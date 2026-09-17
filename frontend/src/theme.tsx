@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
-export const THEME_KEY = "acciones.theme";
+export const THEME_KEY = "stocks.theme";
 export const THEMES = ["dark", "light"] as const;
 export type ThemeMode = (typeof THEMES)[number];
 
@@ -12,7 +12,7 @@ type Ctx = {
 const ThemeContext = createContext<Ctx | null>(null);
 
 export function readTheme(): ThemeMode {
-  const stored = localStorage.getItem(THEME_KEY);
+  const stored = localStorage.getItem(THEME_KEY) ?? localStorage.getItem("acciones.theme");
   if (stored === "light" || stored === "dark") return stored;
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { api, type FxRate } from "./api";
 import type { DisplayCurrency } from "./format";
 
-const CURRENCY_KEY = "acciones.currency";
+const CURRENCY_KEY = "stocks.currency";
 
 type Ctx = {
   currency: DisplayCurrency;
@@ -15,7 +15,8 @@ const CurrencyContext = createContext<Ctx | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<DisplayCurrency>(() => {
-    return localStorage.getItem(CURRENCY_KEY) === "USD" ? "USD" : "COP";
+    const stored = localStorage.getItem(CURRENCY_KEY) ?? localStorage.getItem("acciones.currency");
+    return stored === "USD" ? "USD" : "COP";
   });
   const [rates, setRates] = useState<FxRate[]>([]);
   const [tick, setTick] = useState(0);
