@@ -27,6 +27,8 @@ Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estad
 
 ![Recorrido](demo/demo.gif)
 
+Portafolio ficticio en `demo/demo.sql`. Para levantarlo en local, ver [Probar con la base de demo](#probar-con-la-base-de-demo).
+
 ### Reglas de negocio
 
 
@@ -92,11 +94,7 @@ Al arrancar el contenedor `api` se ejecuta la migración Alembic, el seed del ca
 | Empaquetado  | Docker Compose (servicios `db`, `api`, `web`)                                   |
 
 
-
-
 ## Cómo corre
-
-
 
 ### Con Docker (recomendado)
 
@@ -124,6 +122,17 @@ Nota: Edita `.env` antes del primer `up` si quieres otras claves. Si Postgres ya
 
 Para dejarlo en segundo plano: `docker compose up --build -d`.
 
+### Probar con la base de demo
+
+El primer arranque solo carga el catálogo (nombres, portafolio vacío). Para ver un ejemplo completo — compras, una venta parcial, precios, objetivos, mix COP/USD — restaura `demo/demo.sql` (esto **pisa** la base actual):
+
+```powershell
+docker compose up --build -d
+.\backups\backup.ps1 -Restore demo\demo.sql -Force
+```
+
+Luego abre [http://localhost:5173](http://localhost:5173). Deberías ver Cafe Andino, Sol Energia, Rio Banco, Sierra Metales (COP) y **Nube Telecom** (USD). Si ya tienes datos que te importan, haz dump antes con `.\backups\backup.ps1`.
+
 pgAdmin viene en el mismo Compose. En el árbol izquierdo abre **Servers → stocks**. La primera vez pide la clave de Postgres (`POSTGRES_PASSWORD`). Host interno: `db` (no `localhost`). Si cambias `POSTGRES_USER` o `POSTGRES_DB`, actualiza `pgadmin/servers.json`.
 
 Solo pgAdmin, sin rebuild del resto:
@@ -145,6 +154,8 @@ docker compose up -d pgadmin
 | `VITE_API_URL`                                        | Origen del API que usa el front                                                      |
 | `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`  | Login de pgAdmin                                                                     |
 | `PGADMIN_PORT`                                        | Puerto de pgAdmin en el host (default 5050)                                          |
+
+
 
 
 ## Estructura

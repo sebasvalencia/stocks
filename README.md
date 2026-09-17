@@ -27,6 +27,8 @@ Track a stock portfolio in Colombia (COP) and the United States (USD). Buys, sel
 
 ![Walkthrough](demo/demo.gif)
 
+Fictional portfolio in `demo/demo.sql`. To run the app with this data, see [Try it with the demo database](#try-it-with-the-demo-database).
+
 ### Business rules
 
 
@@ -92,11 +94,7 @@ On start, the `api` container runs the Alembic migration, the catalog seed, and 
 | Packaging   | Docker Compose (`db`, `api`, `web` services)                                    |
 
 
-
-
 ## How to run
-
-
 
 ### With Docker (recommended)
 
@@ -124,6 +122,17 @@ Note: Edit `.env` before the first `up` if you want different secrets. If Postgr
 
 To run in the background: `docker compose up --build -d`.
 
+### Try it with the demo database
+
+The first start only seeds the catalog (holding names, empty portfolio). To explore a complete example — buys, a partial sell, monthly prices, targets, mixed COP/USD — restore `demo/demo.sql` (this **overwrites** the current database):
+
+```powershell
+docker compose up --build -d
+.\backups\backup.ps1 -Restore demo\demo.sql -Force
+```
+
+Then open [http://localhost:5173](http://localhost:5173). You should see Cafe Andino, Sol Energia, Rio Banco, Sierra Metales (COP) and **Nube Telecom** (USD). If you already have data you care about, dump it first with `.\backups\backup.ps1`.
+
 pgAdmin ships in the same Compose file. In the left tree open **Servers → stocks**. The first time it asks for the Postgres password (`POSTGRES_PASSWORD`). Internal host: `db` (not `localhost`). If you change `POSTGRES_USER` or `POSTGRES_DB`, update `pgadmin/servers.json`.
 
 pgAdmin only, without rebuilding the rest:
@@ -145,6 +154,8 @@ docker compose up -d pgadmin
 | `VITE_API_URL`                                        | API origin used by the frontend                                                          |
 | `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`  | pgAdmin login                                                                            |
 | `PGADMIN_PORT`                                        | pgAdmin port on the host (default 5050)                                                  |
+
+
 
 
 ## Layout
