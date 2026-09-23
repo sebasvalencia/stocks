@@ -21,6 +21,7 @@ def _out(row: Trade) -> TradeOut:
         month=row.month,
         quantity=row.quantity,
         commission=row.commission,
+        price=row.price,
         instrument_name=row.instrument.name if row.instrument else None,
         broker_name=row.broker.name if row.broker else None,
         instrument_currency=row.instrument.currency if row.instrument else None,
@@ -60,6 +61,7 @@ def create(body: TradeIn, db: Session = Depends(get_db)) -> TradeOut:
         month=body.month,
         quantity=body.quantity,
         commission=body.commission,
+        price=body.price,
     )
     db.add(row)
     db.commit()
@@ -86,6 +88,7 @@ def update(trade_id: int, body: TradeIn, db: Session = Depends(get_db)) -> Trade
     row.month = body.month
     row.quantity = body.quantity
     row.commission = body.commission
+    row.price = body.price
     db.commit()
     db.refresh(row)
     row = get_trade(db, row.id)

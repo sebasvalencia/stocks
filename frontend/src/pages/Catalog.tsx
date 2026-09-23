@@ -9,6 +9,8 @@ export default function Catalog() {
   const [instrumentName, setInstrumentName] = useState("");
   const [instrumentCurrency, setInstrumentCurrency] = useState<"COP" | "USD">("COP");
   const [brokerName, setBrokerName] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
@@ -56,6 +58,35 @@ export default function Catalog() {
     }
   }
 
+  function startEdit(row: Instrument) {
+    setError(null);
+    setEditingId(row.id);
+    setDraftName(row.name);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setDraftName("");
+  }
+
+  async function saveName(row: Instrument, e: FormEvent) {
+    e.preventDefault();
+    const name = draftName.trim();
+    if (!name) return;
+    if (name === row.name) {
+      cancelEdit();
+      return;
+    }
+    setError(null);
+    try {
+      await api.patchInstrument(row.id, { name });
+      cancelEdit();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.error"));
+    }
+  }
+
   return (
     <div className="grid gap-8 md:grid-cols-2">
       {error && (
@@ -88,20 +119,50 @@ export default function Catalog() {
         </form>
         <ul className="mt-4 divide-y">
           {instruments.map((row) => (
-            <li key={row.id} className="flex items-center justify-between py-2">
-              <span>
-                {row.name}{" "}
-                <span className="text-xs text-muted">
-                  {row.currency} · {row.active ? t("common.active") : t("common.inactive")}
-                </span>
-              </span>
-              <button
-                type="button"
-                className="text-sm text-accent underline"
-                onClick={() => toggleActive(row)}
-              >
-                {row.active ? t("common.inactivate") : t("common.activate")}
-              </button>
+            <li key={row.id} className="flex items-center justify-between gap-2 py-2">
+              {editingId === row.id ? (
+                <form onSubmit={(e) => void saveName(row, e)} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                  <input
+                    className="min-w-[8rem] flex-1 rounded border border-line px-2 py-1"
+                    value={draftName}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    aria-label={t("common.name")}
+                    autoFocus
+                    required
+                  />
+                  <button className="text-sm text-accent underline" type="submit">
+                    {t("common.save")}
+                  </button>
+                  <button className="text-sm text-muted underline" type="button" onClick={cancelEdit}>
+                    {t("common.cancel")}
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <span className="min-w-0">
+                    {row.name}{" "}
+                    <span className="text-xs text-muted">
+                      {row.currency} · {row.active ? t("common.active") : t("common.inactive")}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 gap-3">
+                    <button
+                      type="button"
+                      className="text-sm text-accent underline"
+                      onClick={() => startEdit(row)}
+                    >
+                      {t("common.edit")}
+                    </button>
+                    <button
+                      type="button"
+                      className="text-sm text-accent underline"
+                      onClick={() => void toggleActive(row)}
+                    >
+                      {row.active ? t("common.inactivate") : t("common.activate")}
+                    </button>
+                  </span>
+                </>
+              )}
             </li>
           ))}
         </ul>

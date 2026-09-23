@@ -57,6 +57,8 @@
     "buy": "Acquisto",
     "sell": "Vendita",
     "quantity": "Quantità",
+    "price": "Prezzo per azione ({{currency}})",
+    "amount": "Totale ({{currency}})",
     "commission": "Commissione ({{currency}})",
     "confirmDelete": "Eliminare {{type}} di {{instrument}} presso {{broker}}?"
   },

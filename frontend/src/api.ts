@@ -11,6 +11,7 @@ export type Trade = {
   month: number | null;
   quantity: string;
   commission: string;
+  price: string | null;
   instrument_name: string | null;
   broker_name: string | null;
   instrument_currency: "COP" | "USD" | null;
@@ -54,6 +55,7 @@ export type TradePayload = {
   month: number | null;
   quantity: number;
   commission: number;
+  price: number | null;
 };
 export type Target = {
   id: number;

@@ -54,6 +54,7 @@ class TradeIn(BaseModel):
     month: int | None = Field(default=None, ge=1, le=12)
     quantity: Decimal = Field(gt=0)
     commission: Decimal = Field(default=Decimal("0"), ge=0)
+    price: Decimal | None = Field(default=None, gt=0)
 
 
 class TradeOut(BaseModel):
@@ -67,6 +68,7 @@ class TradeOut(BaseModel):
     month: int | None
     quantity: VisibleDecimal
     commission: VisibleDecimal
+    price: VisibleDecimal | None = None
     instrument_name: str | None = None
     broker_name: str | None = None
     instrument_currency: str | None = None

@@ -8,9 +8,9 @@ Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estad
 
 ## Características
 
-- **Catálogo** de títulos (instrumentos) y corredores, con nombres únicos. Cada título tiene moneda de cotización: **COP** o **USD**.
+- **Catálogo** de títulos (instrumentos) y corredores, con nombres únicos. Cada título tiene moneda de cotización: **COP** o **USD**. El nombre se puede cambiar en Catálogo; precios y movimientos se conservan.
 - **Estado activo / inactivo** por título. Un inactivo no suma al total ni aparece en el peso %. Precios y movimientos se conservan.
-- **Compras y ventas** por par título + corredor (año obligatorio, mes opcional, cantidad > 0, **comisión en la moneda del título** ≥ 0).
+- **Compras y ventas** por par título + corredor (año obligatorio, mes opcional, cantidad > 0, **precio por acción** de esa operación, **comisión en la moneda del título** ≥ 0). El precio del movimiento no es el precio mensual de mercado.
 - **Saldo calculado**: `compras − ventas` por corredor. Venta parcial baja el saldo; venta total lo deja en 0; venta mayor al saldo se rechaza. No hay saldo negativo.
 - **Precios mensuales** por título (no por corredor), en una grilla año × mes.
 - **Aviso de precios del mes**: si a un título activo le falta el precio del mes en curso, Resumen y Precios muestran un banner. En Precios, esas celdas se marcan. El mes lo toma el navegador (no el reloj UTC del contenedor).
@@ -18,7 +18,7 @@ Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estad
 - **Resumen**: total actual = Σ (`saldo × último precio`) solo de títulos **activos**. Si falta precio, la posición se marca “sin precio” y no entra al total.
 - **Gráficas**: peso % del portafolio (torta), variación % mensual del precio (línea) y **avance al objetivo** (`último mercado / objetivo vigente`). Un mes hueco no inventa variación ni avance.
 - **Tema, idioma y moneda de pantalla**: selects compactos en el header (oscuro / claro, ES / EN / IT, COP / USD). La preferencia se guarda en `localStorage`. Los nombres de títulos y corredores no se traducen.
-- **Moneda del título vs vista**: precios, objetivos y comisión se guardan en la moneda del título. El toggle COP / USD del header convierte con la TRM de ese mes (`cop_per_usd`). Si la vista es la misma moneda, no hace falta tasa. Si falta la TRM para un monto cruzado, se muestra “sin TRM”; no se inventa.
+- **Moneda del título vs vista**: precios de mercado, objetivos, precio del movimiento y comisión se guardan en la moneda del título. El toggle COP / USD del header convierte con la TRM de ese mes (`cop_per_usd`). Si la vista es la misma moneda, no hace falta tasa. Si falta la TRM para un monto cruzado, se muestra “sin TRM”; no se inventa.
 - **Seed** inicial: 11 títulos (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), todos **COP**, y 2 corredores (D Corredores, Trii).
 
 
@@ -40,6 +40,7 @@ Portafolio ficticio en `demo/demo.sql`. Para levantarlo en local, ver [Probar co
 | Borrar un movimiento si el saldo quedaría negativo     | Error 400                                                            |
 | Borrar título o corredor con datos asociados           | Error 409                                                            |
 | Variación de un mes                                    | Solo si existe precio en ese mes **y** en el mes calendario anterior |
+| Precio por acción del movimiento                       | Opcional en filas viejas; si se carga, > 0 en la moneda del título. No es el precio mensual; no cambia el total del Resumen |
 | Comisión                                               | ≥ 0 en la moneda del título; no entra al total                       |
 | Cambiar la moneda de cotización de un título           | Error 400 si ya tiene movimientos, precios u objetivos               |
 | Avance al objetivo                                     | Solo si hay precio de mercado **y** objetivo vigente                 |
@@ -51,7 +52,7 @@ Moneda persistida: **COP o USD por título**. El toggle del header es solo prese
 
 ## Cómo funciona
 
-Flujo típico: dar de alta título (COP o USD) y corredor → registrar compras (comisión en esa moneda) → si el banner avisa, cargar precios del mes → fijar objetivo de venta → ver total, peso %, variación y avance en Resumen. El toggle del header muestra el mix en COP o USD.
+Flujo típico: dar de alta título (COP o USD) y corredor → registrar compras (precio por acción y comisión en esa moneda) → si el banner avisa, cargar precios **de mercado** del mes → fijar objetivo de venta → ver total, peso %, variación y avance en Resumen. El toggle del header muestra el mix en COP o USD.
 
 ```mermaid
 sequenceDiagram
@@ -178,7 +179,7 @@ acciones/
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   ├── alembic.ini
-│   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo, 003 inglés, 004 TRM, 005 moneda
+│   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo, 003 inglés, 004 TRM, 005 moneda, 006 precio
 │   ├── app/
 │   │   ├── main.py              # FastAPI, CORS, /health
 │   │   ├── config.py            # DATABASE_URL (sin default; sale del entorno)
@@ -227,6 +228,7 @@ erDiagram
     smallint year
     smallint month "nullable 1-12"
     numeric quantity "> 0"
+    numeric price "nullable > 0 moneda del título"
     numeric commission ">= 0 moneda del título"
   }
   MONTHLY_PRICE {
@@ -261,7 +263,7 @@ erDiagram
 Restricciones:
 
 - `instrument.currency` ∈ `{COP, USD}` (default COP).
-- `trade.type` ∈ `{buy, sell}`; `quantity > 0`; `commission >= 0`; `month` nulo o entre 1 y 12.
+- `trade.type` ∈ `{buy, sell}`; `quantity > 0`; `commission >= 0`; `price` nulo o `> 0`; `month` nulo o entre 1 y 12.
 - `monthly_price` y `price_target` únicos por (`instrument_id`, `year`, `month`); `price > 0`.
 - `fx_rate` único por (`year`, `month`); `cop_per_usd > 0`.
 - FKs: `trade` → `instrument` y `broker`; `monthly_price` y `price_target` → `instrument`.
@@ -298,6 +300,7 @@ classDiagram
     +int year
     +int month
     +Decimal quantity
+    +Decimal price
     +Decimal commission
   }
   class MonthlyPrice {

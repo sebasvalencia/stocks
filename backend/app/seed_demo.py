@@ -59,6 +59,7 @@ def seed_demo(db: Session) -> None:
                 month=3,
                 quantity=_dec(800),
                 commission=_dec(18500),
+                price=_dec(12400),
             ),
             Trade(
                 instrument_id=cafe.id,
@@ -68,6 +69,7 @@ def seed_demo(db: Session) -> None:
                 month=2,
                 quantity=_dec(400),
                 commission=_dec(0),
+                price=_dec(12850),
             ),
             Trade(
                 instrument_id=cafe.id,
@@ -77,6 +79,7 @@ def seed_demo(db: Session) -> None:
                 month=10,
                 quantity=_dec(200),
                 commission=_dec(6200),
+                price=_dec(13600),
             ),
             Trade(
                 instrument_id=cafe.id,
@@ -86,6 +89,7 @@ def seed_demo(db: Session) -> None:
                 month=6,
                 quantity=_dec(250),
                 commission=_dec(9100),
+                price=_dec(13100),
             ),
             Trade(
                 instrument_id=sol.id,
@@ -95,6 +99,7 @@ def seed_demo(db: Session) -> None:
                 month=8,
                 quantity=_dec(600),
                 commission=_dec(14200),
+                price=_dec(5100),
             ),
             Trade(
                 instrument_id=rio.id,
@@ -104,6 +109,7 @@ def seed_demo(db: Session) -> None:
                 month=1,
                 quantity=_dec(350),
                 commission=_dec(0),
+                price=_dec(8200),
             ),
             Trade(
                 instrument_id=sierra.id,
@@ -113,6 +119,7 @@ def seed_demo(db: Session) -> None:
                 month=9,
                 quantity=_dec(180),
                 commission=_dec(5300),
+                price=_dec(22100),
             ),
             Trade(
                 instrument_id=nube.id,
@@ -122,6 +129,7 @@ def seed_demo(db: Session) -> None:
                 month=11,
                 quantity=_dec(90),
                 commission=_dec("4.10"),
+                price=_dec("33.50"),
             ),
         ]
     )

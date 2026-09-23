@@ -18,6 +18,7 @@ export default function Trades() {
   const [year, setYear] = useState("2026");
   const [month, setMonth] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [price, setPrice] = useState("");
   const [commission, setCommission] = useState("0");
 
   async function load() {
@@ -39,6 +40,7 @@ export default function Trades() {
     setYear("2026");
     setMonth("");
     setQuantity("");
+    setPrice("");
     setCommission("0");
   }
 
@@ -51,6 +53,7 @@ export default function Trades() {
       month: month === "" ? null : Number(month),
       quantity: Number(quantity),
       commission: commission === "" ? 0 : Number(commission),
+      price: price === "" ? null : Number(price),
     };
   }
 
@@ -63,6 +66,7 @@ export default function Trades() {
     setYear(String(row.year));
     setMonth(row.month == null ? "" : String(row.month));
     setQuantity(String(Number(row.quantity)));
+    setPrice(row.price == null ? "" : String(Number(row.price)));
     setCommission(String(Number(row.commission)));
   }
 
@@ -89,9 +93,9 @@ export default function Trades() {
     return value === "buy" ? t("trades.buy") : t("trades.sell");
   }
 
-  function commissionText(row: Trade): string {
+  function moneyText(amount: number, row: Trade): string {
     const converted = convertMoney(
-      Number(row.commission),
+      amount,
       asMoneyCurrency(row.instrument_currency),
       currency,
       row.year,
@@ -100,6 +104,20 @@ export default function Trades() {
     );
     if (converted == null) return t("fx.missing");
     return formatMoney(converted, currency);
+  }
+
+  function commissionText(row: Trade): string {
+    return moneyText(Number(row.commission), row);
+  }
+
+  function priceText(row: Trade): string {
+    if (row.price == null) return t("common.dash");
+    return moneyText(Number(row.price), row);
+  }
+
+  function amountText(row: Trade): string {
+    if (row.price == null) return t("common.dash");
+    return moneyText(Number(row.quantity) * Number(row.price), row);
   }
 
   async function remove(row: Trade) {
@@ -213,6 +231,18 @@ export default function Trades() {
             />
           </label>
           <label className="text-sm">
+            {t("trades.price", { currency: nativeCurrency })}
+            <input
+              className="mt-1 w-full rounded border border-line px-2 py-2"
+              type="number"
+              min={0.000001}
+              step="any"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required={editingId == null}
+            />
+          </label>
+          <label className="text-sm">
             {t("trades.commission", { currency: nativeCurrency })}
             <input
               className="mt-1 w-full rounded border border-line px-2 py-2"
@@ -250,6 +280,8 @@ export default function Trades() {
               <th>{t("trades.broker")}</th>
               <th>{t("trades.type")}</th>
               <th className="text-right">{t("trades.quantity")}</th>
+              <th className="text-right">{t("trades.price", { currency })}</th>
+              <th className="text-right">{t("trades.amount", { currency })}</th>
               <th className="text-right">{t("trades.commission", { currency })}</th>
               <th className="text-right">{t("common.actions")}</th>
             </tr>
@@ -263,6 +295,8 @@ export default function Trades() {
                 <td>{r.broker_name}</td>
                 <td>{typeLabel(r.type)}</td>
                 <td className="text-right">{formatNumber(Number(r.quantity))}</td>
+                <td className="text-right">{priceText(r)}</td>
+                <td className="text-right">{amountText(r)}</td>
                 <td className="text-right">{commissionText(r)}</td>
                 <td className="space-x-3 text-right">
                   <button type="button" className="text-accent underline" onClick={() => edit(r)}>

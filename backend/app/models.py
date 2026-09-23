@@ -46,6 +46,7 @@ class Trade(Base):
         CheckConstraint("type IN ('buy', 'sell')", name="ck_trade_type"),
         CheckConstraint("quantity > 0", name="ck_trade_quantity"),
         CheckConstraint("commission >= 0", name="ck_trade_commission"),
+        CheckConstraint("price IS NULL OR price > 0", name="ck_trade_price"),
         CheckConstraint("month IS NULL OR (month >= 1 AND month <= 12)", name="ck_trade_month"),
     )
 
@@ -59,6 +60,7 @@ class Trade(Base):
     commission: Mapped[Decimal] = mapped_column(
         Numeric(18, 2), nullable=False, default=Decimal("0")
     )
+    price: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)
 
     instrument: Mapped[Instrument] = relationship(back_populates="trades")
     broker: Mapped[Broker] = relationship(back_populates="trades")

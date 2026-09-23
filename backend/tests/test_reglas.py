@@ -278,6 +278,7 @@ def test_commission_is_stored_and_does_not_change_total(client: TestClient) -> N
     )
     assert r.status_code == 201
     assert Decimal(str(r.json()["commission"])) == Decimal("12500")
+    assert r.json()["price"] is None
     r = client.put(
         "/prices",
         json={"instrument_id": eco, "year": 2026, "month": 9, "price": 100},
@@ -285,6 +286,47 @@ def test_commission_is_stored_and_does_not_change_total(client: TestClient) -> N
     assert r.status_code == 200
     res = client.get("/summary").json()
     assert Decimal(str(res["total"])) == Decimal("1000")
+
+
+def test_trade_price_is_stored_and_does_not_change_total(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    r = client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+            "commission": 12500,
+            "price": 2480,
+        },
+    )
+    assert r.status_code == 201
+    assert Decimal(str(r.json()["price"])) == Decimal("2480")
+    r = client.put(
+        "/prices",
+        json={"instrument_id": eco, "year": 2026, "month": 9, "price": 100},
+    )
+    assert r.status_code == 200
+    res = client.get("/summary").json()
+    assert Decimal(str(res["total"])) == Decimal("1000")
+
+
+def test_non_positive_trade_price_rejected(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    r = client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 10,
+            "price": 0,
+        },
+    )
+    assert r.status_code == 422
 
 
 def test_negative_commission_rejected(client: TestClient) -> None:
@@ -376,6 +418,33 @@ def test_fx_rate_missing_month_is_not_invented(client: TestClient) -> None:
     months = {r["month"] for r in rows}
     assert 1 in months
     assert 9 not in months
+
+
+def test_rename_instrument_keeps_id_and_rejects_duplicate(client: TestClient) -> None:
+    eco, dcor, _ = _ids(client)
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
+        },
+    )
+    client.put("/prices", json={"instrument_id": eco, "year": 2026, "month": 9, "price": 2645})
+    r = client.put(f"/instruments/{eco}", json={"name": "Ecopetrol SA"})
+    assert r.status_code == 200
+    assert r.json()["id"] == eco
+    assert r.json()["name"] == "Ecopetrol SA"
+    pos = next(p for p in client.get("/summary").json()["positions"] if p["instrument_id"] == eco)
+    assert pos["instrument_name"] == "Ecopetrol SA"
+    assert Decimal(str(pos["balance"])) == Decimal("1500")
+    celsia = {r["name"]: r["id"] for r in client.get("/instruments").json()}["Celsia"]
+    r = client.put(f"/instruments/{eco}", json={"name": "Celsia"})
+    assert r.status_code == 409
+    assert r.json()["detail"] == "instrument_exists"
+    assert client.get(f"/instruments/{celsia}").json()["name"] == "Celsia"
 
 
 def test_instrument_usd_currency_and_lock(client: TestClient) -> None:
