@@ -95,6 +95,81 @@ export type FxRate = {
   month: number;
   cop_per_usd: string;
 };
+export type Fiduciary = { id: number; name: string };
+export type Fund = { id: number; name: string; active: boolean; currency: "COP" | "USD" };
+export type FundTrade = {
+  id: number;
+  fund_id: number;
+  fiduciary_id: number;
+  type: "subscribe" | "redeem";
+  year: number;
+  month: number | null;
+  quantity: string;
+  commission: string;
+  price: string | null;
+  fund_name: string | null;
+  fiduciary_name: string | null;
+  fund_currency: "COP" | "USD" | null;
+};
+export type FundTradePayload = {
+  fund_id: number;
+  fiduciary_id: number;
+  type: "subscribe" | "redeem";
+  year: number;
+  month: number | null;
+  quantity: number;
+  commission: number;
+  price: number | null;
+};
+export type UnitValue = {
+  id: number;
+  fund_id: number;
+  year: number;
+  month: number;
+  value: string;
+  fund_name: string | null;
+  fund_currency: "COP" | "USD" | null;
+};
+export type PendingUnitValues = {
+  year: number;
+  month: number;
+  total_active: number;
+  pending: number;
+  missing: { fund_id: number; fund_name: string }[];
+};
+export type FundTarget = {
+  id: number;
+  fund_id: number;
+  year: number;
+  month: number;
+  price: string;
+  fund_name: string | null;
+  fund_currency: "COP" | "USD" | null;
+};
+export type FundTargetProgress = {
+  fund_id: number;
+  fund_name: string;
+  last_price: string | null;
+  price_year: number | null;
+  price_month: number | null;
+  target: string | null;
+  target_year: number | null;
+  target_month: number | null;
+  progress_pct: string | null;
+  fund_currency: "COP" | "USD";
+};
+export type FundVariation = {
+  fund_id: number;
+  fund_name: string;
+  fund_currency: "COP" | "USD";
+  points: {
+    year: number;
+    month: number;
+    price: string;
+    variation_pct: string | null;
+  }[];
+};
+export type Wealth = { equities: Summary; funds: Summary; total: string };
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -126,6 +201,8 @@ export const api = {
   brokers: () => req<Broker[]>("/brokers"),
   createBroker: (name: string) =>
     req<Broker>("/brokers", { method: "POST", body: JSON.stringify({ name }) }),
+  patchBroker: (id: number, name: string) =>
+    req<Broker>(`/brokers/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
   instruments: () => req<Instrument[]>("/instruments"),
   createInstrument: (name: string, currency: "COP" | "USD" = "COP") =>
     req<Instrument>("/instruments", { method: "POST", body: JSON.stringify({ name, active: true, currency }) }),
@@ -153,4 +230,35 @@ export const api = {
   fxRates: (year?: number) => req<FxRate[]>(year ? `/fx-rates?year=${year}` : "/fx-rates"),
   upsertFxRate: (body: { year: number; month: number; cop_per_usd: number }) =>
     req<FxRate>("/fx-rates", { method: "PUT", body: JSON.stringify(body) }),
+  wealth: () => req<Wealth>("/wealth"),
+  fiduciaries: () => req<Fiduciary[]>("/funds/fiduciaries"),
+  createFiduciary: (name: string) =>
+    req<Fiduciary>("/funds/fiduciaries", { method: "POST", body: JSON.stringify({ name }) }),
+  patchFiduciary: (id: number, name: string) =>
+    req<Fiduciary>(`/funds/fiduciaries/${id}`, { method: "PUT", body: JSON.stringify({ name }) }),
+  funds: () => req<Fund[]>("/funds/funds"),
+  createFund: (name: string, currency: "COP" | "USD" = "COP") =>
+    req<Fund>("/funds/funds", { method: "POST", body: JSON.stringify({ name, active: true, currency }) }),
+  patchFund: (id: number, body: { active?: boolean; name?: string; currency?: "COP" | "USD" }) =>
+    req<Fund>(`/funds/funds/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  fundTrades: () => req<FundTrade[]>("/funds/trades"),
+  createFundTrade: (body: FundTradePayload) =>
+    req<FundTrade>("/funds/trades", { method: "POST", body: JSON.stringify(body) }),
+  updateFundTrade: (id: number, body: FundTradePayload) =>
+    req<FundTrade>(`/funds/trades/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteFundTrade: (id: number) => req<void>(`/funds/trades/${id}`, { method: "DELETE" }),
+  fundUnitValues: (year?: number) =>
+    req<UnitValue[]>(year ? `/funds/unit-values?year=${year}` : "/funds/unit-values"),
+  upsertFundUnitValue: (body: { fund_id: number; year: number; month: number; value: number }) =>
+    req<UnitValue>("/funds/unit-values", { method: "PUT", body: JSON.stringify(body) }),
+  pendingFundUnitValues: (year: number, month: number) =>
+    req<PendingUnitValues>(`/funds/unit-values/pending?year=${year}&month=${month}`),
+  fundSummary: () => req<Summary>("/funds/summary"),
+  fundVariation: (fundId: number) =>
+    req<FundVariation>(`/funds/price-variation?fund_id=${fundId}`),
+  fundTargets: (fundId: number) => req<FundTarget[]>(`/funds/targets?fund_id=${fundId}`),
+  upsertFundTarget: (body: { fund_id: number; year: number; month: number; price: number }) =>
+    req<FundTarget>("/funds/targets", { method: "PUT", body: JSON.stringify(body) }),
+  fundTargetProgress: (fundId: number) =>
+    req<FundTargetProgress>(`/funds/target-progress?fund_id=${fundId}`),
 };

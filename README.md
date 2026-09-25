@@ -4,7 +4,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Track a stock portfolio in Colombia (COP) and the United States (USD). Buys, sells, per-trade commission, month-by-month market prices, and a sell target per holding are entered by hand. Balance, current value, percentages, and progress to target are calculated; they are not stored twice.
+Track a stock portfolio in Colombia (COP) and the United States (USD), plus Colombian collective funds (FIC) in the same app. Buys, sells, subscriptions, redemptions, per-trade commission, month-by-month market or unit values, and a sell target are entered by hand. Balance, current value, percentages, and progress to target are calculated; they are not stored twice.
 
 ## Features
 
@@ -19,7 +19,9 @@ Track a stock portfolio in Colombia (COP) and the United States (USD). Buys, sel
 - **Charts**: portfolio weight % (pie), monthly price % change (line), and **progress to target** (`last market / current target`). A gap month does not invent a change or a progress point.
 - **Theme, language, display currency**: compact selects in the header (dark / light, ES / EN / IT, COP / USD). Preference is stored in `localStorage`. Holding and broker names are not translated.
 - **Quote currency vs display**: market prices, targets, trade price, and commission are stored in the holding’s currency. The header COP / USD toggle converts with that month’s TRM (`cop_per_usd`). Same-currency view does not need a rate. If the rate is missing for a cross-currency amount, the UI shows “no FX”; it does not invent one.
-- **Initial seed**: 11 holdings (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), all **COP**, and 2 brokers (D Corredores, Trii).
+- **Funds (FIC)**: separate catalog of funds and fiduciaries (not brokers). Subscriptions and redemptions per fund + fiduciary; monthly **unit value** (not written from the trade); target per fund. Same rules as stocks: no over-redeem, no subscribe to an inactive fund, no deactivate with units > 0.
+- **Combined summary**: `GET /wealth` adds the stock total and the fund total. The UI shows one combined total and two blocks (weight %, unit-value change, and target progress per module). Exchange-listed ETFs stay as holdings; FICs do not reuse `trade` or `broker`.
+- **Initial seed**: 11 holdings (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), all **COP**, and 2 brokers (D Corredores, Trii). The FIC catalog starts empty.
 
 
 
@@ -46,6 +48,10 @@ Fictional portfolio in `demo/demo.sql`. To run the app with this data, see [Try 
 | Progress to target                                     | Only if there is a market price **and** a current target            |
 | Pending prices for the month                           | Only **active** holdings missing a cell in the current month        |
 | Cross-currency view without that month’s FX rate       | No conversion; the UI shows “no FX”                                 |
+| Redeem more units than the fund+fiduciary balance      | 400 error                                                           |
+| Deactivate a fund with units > 0                       | 400 error                                                           |
+| Fund trade unit price or commission                    | Stored on the movement; does not write `fund_unit_value` or change the total |
+| Combined wealth                                        | Stocks total + funds total (only active rows with a price / unit value) |
 
 
 Persisted currency: **COP or USD per holding**. The header toggle is display only: `amount_usd = amount_cop / cop_per_usd` and `amount_cop = amount_usd × cop_per_usd` with that **month’s** TRM.
@@ -179,28 +185,29 @@ acciones/
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   ├── alembic.ini
-│   ├── alembic/versions/        # 001 3NF, 002 commission + target, 003 English, 004 FX, 005 currency, 006 price
-│   ├── app/
-│   │   ├── main.py              # FastAPI, CORS, /health
-│   │   ├── config.py            # DATABASE_URL (no default; comes from the environment)
-│   │   ├── database.py          # engine, session, Base
-│   │   ├── models.py            # 3NF ORM (English)
-│   │   ├── schemas.py           # Pydantic input/output
-│   │   ├── seed.py              # 11 holdings + 2 brokers (only if the catalog is empty)
-│   │   ├── seed_demo.py         # fictional README portfolio
-│   │   ├── routers/             # brokers, instruments, trades, prices, targets, summary, fx
-│   │   └── services/            # rules, balances, variation, target
-│   └── tests/
-└── frontend/
+    │   ├── alembic/versions/        # 001 3NF, 002 commission + target, 003 English, 004 FX, 005 currency, 006 price, 007 funds
+    │   ├── app/
+    │   │   ├── main.py              # FastAPI, CORS, /health, /wealth
+    │   │   ├── config.py            # DATABASE_URL (no default; comes from the environment)
+    │   │   ├── database.py          # engine, session, Base
+    │   │   ├── models.py            # 3NF ORM (English) + FIC model import
+    │   │   ├── schemas.py           # Pydantic input/output
+    │   │   ├── seed.py              # 11 holdings + 2 brokers (only if the catalog is empty)
+    │   │   ├── seed_demo.py         # fictional README portfolio
+    │   │   ├── routers/             # brokers, instruments, trades, prices, targets, summary, fx, wealth
+    │   │   ├── services/            # rules, balances, variation, target
+    │   │   └── funds/               # FIC models, schemas, routers, services
+    │   └── tests/
+    └── frontend/
     ├── Dockerfile
     ├── src/
     │   ├── main.tsx
-    │   ├── App.tsx              # routes, theme, language, and COP/USD
+    │   ├── App.tsx              # routes, Acciones/Fondos switch, theme, language, COP/USD
     │   ├── api.ts               # HTTP client
     │   ├── i18n.ts              # es / en / it
     │   ├── theme.tsx            # dark / light
-    │   ├── BannerPrecios.tsx    # missing-price notice for the current month
-    │   └── pages/               # Summary, Prices, Trades, Catalog, FxRates
+    │   ├── BannerPrecios.tsx    # missing price / unit value for the current month
+    │   └── pages/               # Summary, Prices, Trades, Catalog, FxRates, funds/
     └── ...
 ```
 
@@ -256,6 +263,46 @@ erDiagram
   INSTRUMENT ||--o{ TRADE : records
   INSTRUMENT ||--o{ MONTHLY_PRICE : quotes
   INSTRUMENT ||--o{ PRICE_TARGET : targets
+  FIDUCIARY {
+    int id PK
+    varchar name UK
+  }
+  FUND {
+    int id PK
+    varchar name UK
+    boolean active
+    varchar currency "COP | USD"
+  }
+  FUND_TRADE {
+    int id PK
+    int fund_id FK
+    int fiduciary_id FK
+    varchar type "subscribe | redeem"
+    smallint year
+    smallint month "nullable 1-12"
+    numeric quantity "> 0"
+    numeric price "nullable > 0 native"
+    numeric commission ">= 0 native"
+  }
+  FUND_UNIT_VALUE {
+    int id PK
+    int fund_id FK
+    smallint year
+    smallint month "1-12"
+    numeric value "> 0"
+  }
+  FUND_TARGET {
+    int id PK
+    int fund_id FK
+    smallint year
+    smallint month "1-12"
+    numeric price "> 0"
+  }
+
+  FIDUCIARY ||--o{ FUND_TRADE : records
+  FUND ||--o{ FUND_TRADE : records
+  FUND ||--o{ FUND_UNIT_VALUE : quotes
+  FUND ||--o{ FUND_TARGET : targets
 ```
 
 
@@ -267,6 +314,10 @@ Constraints:
 - `monthly_price` and `price_target` unique per (`instrument_id`, `year`, `month`); `price > 0`.
 - `fx_rate` unique per (`year`, `month`); `cop_per_usd > 0`.
 - FKs: `trade` → `instrument` and `broker`; `monthly_price` and `price_target` → `instrument`.
+- `fund.currency` ∈ `{COP, USD}` (default COP).
+- `fund_trade.type` ∈ `{subscribe, redeem}`; `quantity > 0`; `commission >= 0`; `price` null or `> 0`.
+- `fund_unit_value` and `fund_target` unique per (`fund_id`, `year`, `month`).
+- FKs: `fund_trade` → `fund` and `fiduciary`; `fund_unit_value` and `fund_target` → `fund`.
 
 Why it is 3NF: every non-key attribute depends only on the PK. The holding name is not copied onto trade, price, or target. Balance, progress, and COP/USD display conversion come from queries.
 
@@ -328,6 +379,40 @@ classDiagram
   Instrument "1" --> "*" Trade : trades
   Instrument "1" --> "*" MonthlyPrice : prices
   Instrument "1" --> "*" PriceTarget : targets
+  class Fiduciary {
+    +int id
+    +str name
+  }
+  class Fund {
+    +int id
+    +str name
+    +bool active
+    +str currency
+  }
+  class FundTrade {
+    +int id
+    +int fund_id
+    +int fiduciary_id
+    +str type
+    +Decimal quantity
+    +Decimal price
+    +Decimal commission
+  }
+  class FundUnitValue {
+    +int id
+    +int fund_id
+    +Decimal value
+  }
+  class FundTarget {
+    +int id
+    +int fund_id
+    +Decimal price
+  }
+
+  Fiduciary "1" --> "*" FundTrade : trades
+  Fund "1" --> "*" FundTrade : trades
+  Fund "1" --> "*" FundUnitValue : unit_values
+  Fund "1" --> "*" FundTarget : targets
 ```
 
 

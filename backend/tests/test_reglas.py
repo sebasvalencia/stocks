@@ -447,6 +447,30 @@ def test_rename_instrument_keeps_id_and_rejects_duplicate(client: TestClient) ->
     assert client.get(f"/instruments/{celsia}").json()["name"] == "Celsia"
 
 
+def test_rename_broker_keeps_id_and_rejects_duplicate(client: TestClient) -> None:
+    eco, dcor, trii = _ids(client)
+    client.post(
+        "/trades",
+        json={
+            "instrument_id": eco,
+            "broker_id": dcor,
+            "type": "buy",
+            "year": 2007,
+            "quantity": 1500,
+        },
+    )
+    r = client.put(f"/brokers/{dcor}", json={"name": "Davivienda Corredores"})
+    assert r.status_code == 200
+    assert r.json()["id"] == dcor
+    assert r.json()["name"] == "Davivienda Corredores"
+    pos = next(p for p in client.get("/summary").json()["positions"] if p["broker_id"] == dcor)
+    assert pos["broker_name"] == "Davivienda Corredores"
+    r = client.put(f"/brokers/{dcor}", json={"name": "Trii"})
+    assert r.status_code == 409
+    assert r.json()["detail"] == "broker_exists"
+    assert client.get(f"/brokers/{trii}").json()["name"] == "Trii"
+
+
 def test_instrument_usd_currency_and_lock(client: TestClient) -> None:
     r = client.post("/instruments", json={"name": "AAPL", "active": True, "currency": "USD"})
     assert r.status_code == 201

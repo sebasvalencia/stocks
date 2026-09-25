@@ -5,7 +5,10 @@
     "prices": "Prices",
     "trades": "Trades",
     "catalog": "Catalog",
-    "fx": "FX"
+    "fx": "FX",
+    "equities": "Stocks",
+    "funds": "Funds",
+    "module": "Module"
   },
   "lang": { "label": "Language", "es": "Español", "en": "English", "it": "Italiano" },
   "currency": { "label": "Currency", "cop": "COP", "usd": "USD" },
@@ -40,7 +43,10 @@
   "banner": {
     "one": "1 price missing for {{month}} ({{total}} active holdings).",
     "many": "{{count}} prices missing for {{month}} ({{total}} active holdings).",
-    "load": "Enter on Prices"
+    "load": "Enter on Prices",
+    "fundsOne": "1 unit value missing for {{month}} ({{total}} active funds).",
+    "fundsMany": "{{count}} unit values missing for {{month}} ({{total}} active funds).",
+    "fundsLoad": "Enter on Funds"
   },
   "catalog": {
     "instruments": "Holdings",
@@ -67,6 +73,9 @@
     "saved": "Prices saved"
   },
   "summary": {
+    "combined": "Combined total (stocks + funds)",
+    "equities": "Stocks",
+    "funds": "Funds",
     "total": "Current total (active holdings)",
     "positions": "Positions",
     "instrument": "Holding",
@@ -110,6 +119,62 @@
     "cannotDeleteInstrument": "Cannot delete: this holding has trades, prices, or targets",
     "cannotDeleteTrade": "Cannot delete: the broker balance would become negative",
     "sellExceedsBalance": "The sale exceeds the balance at this broker",
-    "cannotChangeCurrency": "Cannot change currency: the holding already has trades, prices, or targets"
+    "cannotChangeCurrency": "Cannot change currency: the holding already has trades, prices, or targets",
+    "fiduciaryNotFound": "Fiduciary not found",
+    "fundNotFound": "Fund not found",
+    "fundTradeNotFound": "Fund trade not found",
+    "fundTargetNotFound": "Fund target not found",
+    "unitValueNotFound": "Unit value not found",
+    "fiduciaryExists": "A fiduciary with that name already exists",
+    "fundExists": "A fund with that name already exists",
+    "cannotInactivateFund": "Cannot deactivate: the fund still has a unit balance greater than 0",
+    "cannotSubscribeInactive": "Cannot subscribe to an inactive fund; activate it first",
+    "cannotDeleteFiduciary": "Cannot delete: there are trades with this fiduciary",
+    "cannotDeleteFund": "Cannot delete: this fund has trades, unit values, or targets",
+    "cannotDeleteFundTrade": "Cannot delete: the fiduciary balance would become negative",
+    "redeemExceedsBalance": "The redemption exceeds the balance at this fiduciary",
+    "cannotChangeFundCurrency": "Cannot change currency: the fund already has trades, unit values, or targets"
+  },
+  "funds": {
+    "catalog": {
+      "funds": "Funds",
+      "fiduciaries": "Fiduciaries",
+      "currency": "Fund currency"
+    },
+    "trades": {
+      "register": "Record a subscription or redemption",
+      "edit": "Edit trade",
+      "history": "History",
+      "fund": "Fund",
+      "fiduciary": "Fiduciary",
+      "type": "Type",
+      "subscribe": "Subscribe",
+      "redeem": "Redeem",
+      "quantity": "Units",
+      "price": "Unit value ({{currency}})",
+      "amount": "Amount ({{currency}})",
+      "commission": "Commission ({{currency}})",
+      "confirmDelete": "Delete {{type}} of {{fund}} at {{fiduciary}}?"
+    },
+    "prices": {
+      "fund": "Fund",
+      "saved": "Unit values saved"
+    },
+    "summary": {
+      "positions": "Positions",
+      "fund": "Fund",
+      "fiduciary": "Fiduciary",
+      "lastValue": "Last unit value",
+      "noValue": "no value",
+      "pieTitle": "Weight % among funds",
+      "pieEmpty": "No unit values to chart.",
+      "variationTitle": "Unit-value monthly % change",
+      "variationEmpty": "The previous calendar month is missing; the point is not invented.",
+      "targetTitle": "Progress to target unit value",
+      "targetPrice": "Target unit value ({{currency}})",
+      "saveTarget": "Save target",
+      "targetEmpty": "Unit value or current target is missing; progress is not invented.",
+      "targetVs": "Last unit value vs current target"
+    }
   }
 }

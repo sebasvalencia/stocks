@@ -29,6 +29,20 @@ const EXACT: Record<string, string> = {
   cannot_delete_trade: "errors.cannotDeleteTrade",
   cannot_change_currency: "errors.cannotChangeCurrency",
   sell_exceeds_balance: "errors.sellExceedsBalance",
+  fiduciary_not_found: "errors.fiduciaryNotFound",
+  fund_not_found: "errors.fundNotFound",
+  fund_trade_not_found: "errors.fundTradeNotFound",
+  fund_target_not_found: "errors.fundTargetNotFound",
+  unit_value_not_found: "errors.unitValueNotFound",
+  fiduciary_exists: "errors.fiduciaryExists",
+  fund_exists: "errors.fundExists",
+  cannot_inactivate_fund: "errors.cannotInactivateFund",
+  cannot_subscribe_inactive: "errors.cannotSubscribeInactive",
+  cannot_delete_fiduciary: "errors.cannotDeleteFiduciary",
+  cannot_delete_fund: "errors.cannotDeleteFund",
+  cannot_delete_fund_trade: "errors.cannotDeleteFundTrade",
+  redeem_exceeds_balance: "errors.redeemExceedsBalance",
+  cannot_change_fund_currency: "errors.cannotChangeFundCurrency",
 };
 
 export function translateApiError(msg: string): string {

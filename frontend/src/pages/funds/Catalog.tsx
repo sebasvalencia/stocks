@@ -1,64 +1,64 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type Broker, type Instrument } from "../api";
+import { api, type Fiduciary, type Fund } from "../../api";
 
-export default function Catalog() {
+export default function FundsCatalog() {
   const { t } = useTranslation();
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [brokers, setBrokers] = useState<Broker[]>([]);
-  const [instrumentName, setInstrumentName] = useState("");
-  const [instrumentCurrency, setInstrumentCurrency] = useState<"COP" | "USD">("COP");
-  const [brokerName, setBrokerName] = useState("");
-  const [editing, setEditing] = useState<{ kind: "instrument" | "broker"; id: number } | null>(null);
+  const [funds, setFunds] = useState<Fund[]>([]);
+  const [fiduciaries, setFiduciaries] = useState<Fiduciary[]>([]);
+  const [fundName, setFundName] = useState("");
+  const [fundCurrency, setFundCurrency] = useState<"COP" | "USD">("COP");
+  const [fiduciaryName, setFiduciaryName] = useState("");
+  const [editing, setEditing] = useState<{ kind: "fund" | "fiduciary"; id: number } | null>(null);
   const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const [i, c] = await Promise.all([api.instruments(), api.brokers()]);
-    setInstruments(i);
-    setBrokers(c);
+    const [f, c] = await Promise.all([api.funds(), api.fiduciaries()]);
+    setFunds(f);
+    setFiduciaries(c);
   }
 
   useEffect(() => {
     load().catch((e: Error) => setError(e.message));
   }, []);
 
-  async function addInstrument(e: FormEvent) {
+  async function addFund(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await api.createInstrument(instrumentName.trim(), instrumentCurrency);
-      setInstrumentName("");
-      setInstrumentCurrency("COP");
+      await api.createFund(fundName.trim(), fundCurrency);
+      setFundName("");
+      setFundCurrency("COP");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     }
   }
 
-  async function addBroker(e: FormEvent) {
+  async function addFiduciary(e: FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      await api.createBroker(brokerName.trim());
-      setBrokerName("");
+      await api.createFiduciary(fiduciaryName.trim());
+      setFiduciaryName("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     }
   }
 
-  async function toggleActive(row: Instrument) {
+  async function toggleActive(row: Fund) {
     setError(null);
     try {
-      await api.patchInstrument(row.id, { active: !row.active });
+      await api.patchFund(row.id, { active: !row.active });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     }
   }
 
-  function startEdit(kind: "instrument" | "broker", row: { id: number; name: string }) {
+  function startEdit(kind: "fund" | "fiduciary", row: { id: number; name: string }) {
     setError(null);
     setEditing({ kind, id: row.id });
     setDraftName(row.name);
@@ -69,7 +69,7 @@ export default function Catalog() {
     setDraftName("");
   }
 
-  async function saveName(kind: "instrument" | "broker", row: { id: number; name: string }, e: FormEvent) {
+  async function saveName(kind: "fund" | "fiduciary", row: { id: number; name: string }, e: FormEvent) {
     e.preventDefault();
     const name = draftName.trim();
     if (!name) return;
@@ -79,8 +79,8 @@ export default function Catalog() {
     }
     setError(null);
     try {
-      if (kind === "instrument") await api.patchInstrument(row.id, { name });
-      else await api.patchBroker(row.id, name);
+      if (kind === "fund") await api.patchFund(row.id, { name });
+      else await api.patchFiduciary(row.id, name);
       cancelEdit();
       await load();
     } catch (err) {
@@ -96,20 +96,20 @@ export default function Catalog() {
         </p>
       )}
       <section className="rounded-lg bg-surface p-4 shadow-sm">
-        <h2 className="font-display text-xl">{t("catalog.instruments")}</h2>
-        <form onSubmit={addInstrument} className="mt-3 flex flex-wrap gap-2">
+        <h2 className="font-display text-xl">{t("funds.catalog.funds")}</h2>
+        <form onSubmit={addFund} className="mt-3 flex flex-wrap gap-2">
           <input
             className="min-w-[10rem] flex-1 rounded border border-line px-3 py-2"
-            value={instrumentName}
-            onChange={(e) => setInstrumentName(e.target.value)}
+            value={fundName}
+            onChange={(e) => setFundName(e.target.value)}
             placeholder={t("common.name")}
             required
           />
           <select
             className="rounded border border-line bg-surface-2 px-2 py-2 text-sm"
-            value={instrumentCurrency}
-            onChange={(e) => setInstrumentCurrency(e.target.value as "COP" | "USD")}
-            aria-label={t("catalog.currency")}
+            value={fundCurrency}
+            onChange={(e) => setFundCurrency(e.target.value as "COP" | "USD")}
+            aria-label={t("funds.catalog.currency")}
           >
             <option value="COP">{t("currency.cop")}</option>
             <option value="USD">{t("currency.usd")}</option>
@@ -119,10 +119,10 @@ export default function Catalog() {
           </button>
         </form>
         <ul className="mt-4 divide-y">
-          {instruments.map((row) => (
+          {funds.map((row) => (
             <li key={row.id} className="flex items-center justify-between gap-2 py-2">
-              {editing?.kind === "instrument" && editing.id === row.id ? (
-                <form onSubmit={(e) => void saveName("instrument", row, e)} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              {editing?.kind === "fund" && editing.id === row.id ? (
+                <form onSubmit={(e) => void saveName("fund", row, e)} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                   <input
                     className="min-w-[8rem] flex-1 rounded border border-line px-2 py-1"
                     value={draftName}
@@ -147,11 +147,7 @@ export default function Catalog() {
                     </span>
                   </span>
                   <span className="flex shrink-0 gap-3">
-                    <button
-                      type="button"
-                      className="text-sm text-accent underline"
-                      onClick={() => startEdit("instrument", row)}
-                    >
+                    <button type="button" className="text-sm text-accent underline" onClick={() => startEdit("fund", row)}>
                       {t("common.edit")}
                     </button>
                     <button
@@ -169,12 +165,12 @@ export default function Catalog() {
         </ul>
       </section>
       <section className="rounded-lg bg-surface p-4 shadow-sm">
-        <h2 className="font-display text-xl">{t("catalog.brokers")}</h2>
-        <form onSubmit={addBroker} className="mt-3 flex gap-2">
+        <h2 className="font-display text-xl">{t("funds.catalog.fiduciaries")}</h2>
+        <form onSubmit={addFiduciary} className="mt-3 flex gap-2">
           <input
             className="flex-1 rounded border border-line px-3 py-2"
-            value={brokerName}
-            onChange={(e) => setBrokerName(e.target.value)}
+            value={fiduciaryName}
+            onChange={(e) => setFiduciaryName(e.target.value)}
             placeholder={t("common.name")}
             required
           />
@@ -183,10 +179,10 @@ export default function Catalog() {
           </button>
         </form>
         <ul className="mt-4 divide-y">
-          {brokers.map((row) => (
+          {fiduciaries.map((row) => (
             <li key={row.id} className="flex items-center justify-between gap-2 py-2">
-              {editing?.kind === "broker" && editing.id === row.id ? (
-                <form onSubmit={(e) => void saveName("broker", row, e)} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              {editing?.kind === "fiduciary" && editing.id === row.id ? (
+                <form onSubmit={(e) => void saveName("fiduciary", row, e)} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                   <input
                     className="min-w-[8rem] flex-1 rounded border border-line px-2 py-1"
                     value={draftName}
@@ -208,7 +204,7 @@ export default function Catalog() {
                   <button
                     type="button"
                     className="shrink-0 text-sm text-accent underline"
-                    onClick={() => startEdit("broker", row)}
+                    onClick={() => startEdit("fiduciary", row)}
                   >
                     {t("common.edit")}
                   </button>

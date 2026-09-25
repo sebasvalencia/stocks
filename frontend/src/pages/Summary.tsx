@@ -1,444 +1,279 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import BannerPrecios from "../BannerPrecios";
-import { api, type Instrument, type Summary, type Target, type TargetProgress, type Variation } from "../api";
+import {
+  api,
+  type Fund,
+  type FundTarget,
+  type FundTargetProgress,
+  type FundVariation,
+  type Instrument,
+  type Target,
+  type TargetProgress,
+  type Variation,
+  type Wealth,
+} from "../api";
 import { useCurrency } from "../currency";
-import { asMoneyCurrency, convertMoney, formatMoney, formatNumber } from "../format";
-import { chartTheme, useTheme } from "../theme";
+import { formatMoney } from "../format";
+import PortfolioBlock, { useDisplayPositions } from "./PortfolioBlock";
+
+function asTarget(row: FundTarget): Target {
+  return {
+    id: row.id,
+    instrument_id: row.fund_id,
+    year: row.year,
+    month: row.month,
+    price: row.price,
+    instrument_name: row.fund_name,
+    instrument_currency: row.fund_currency,
+  };
+}
+
+function asProgress(row: FundTargetProgress): TargetProgress {
+  return {
+    instrument_id: row.fund_id,
+    instrument_name: row.fund_name,
+    last_price: row.last_price,
+    price_year: row.price_year,
+    price_month: row.price_month,
+    target: row.target,
+    target_year: row.target_year,
+    target_month: row.target_month,
+    progress_pct: row.progress_pct,
+    instrument_currency: row.fund_currency,
+  };
+}
+
+function asVariation(row: FundVariation): Variation {
+  return {
+    instrument_id: row.fund_id,
+    instrument_name: row.fund_name,
+    instrument_currency: row.fund_currency,
+    points: row.points,
+  };
+}
 
 export default function SummaryPage() {
   const { t } = useTranslation();
-  const { currency, rates } = useCurrency();
-  const { theme } = useTheme();
-  const CHART = chartTheme(theme);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const { currency } = useCurrency();
+  const [wealth, setWealth] = useState<Wealth | null>(null);
   const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [sel, setSel] = useState<number | "">("");
-  const [variation, setVariation] = useState<Variation | null>(null);
-  const [progress, setProgress] = useState<TargetProgress | null>(null);
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [objYear, setObjYear] = useState("2026");
-  const [objMonth, setObjMonth] = useState("9");
-  const [objPrice, setObjPrice] = useState("");
+  const [funds, setFunds] = useState<Fund[]>([]);
+  const [eqSel, setEqSel] = useState<number | "">("");
+  const [fdSel, setFdSel] = useState<number | "">("");
+  const [eqVariation, setEqVariation] = useState<Variation | null>(null);
+  const [eqProgress, setEqProgress] = useState<TargetProgress | null>(null);
+  const [eqTargets, setEqTargets] = useState<Target[]>([]);
+  const [fdVariation, setFdVariation] = useState<Variation | null>(null);
+  const [fdProgress, setFdProgress] = useState<TargetProgress | null>(null);
+  const [fdTargets, setFdTargets] = useState<Target[]>([]);
+  const [eqYear, setEqYear] = useState("2026");
+  const [eqMonth, setEqMonth] = useState("9");
+  const [eqPrice, setEqPrice] = useState("");
+  const [fdYear, setFdYear] = useState("2026");
+  const [fdMonth, setFdMonth] = useState("9");
+  const [fdPrice, setFdPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const active = useMemo(() => instruments.filter((i) => i.active), [instruments]);
+  const activeEq = useMemo(() => instruments.filter((i) => i.active), [instruments]);
+  const activeFd = useMemo(() => funds.filter((i) => i.active), [funds]);
+  const eqDisplay = useDisplayPositions(wealth?.equities.positions ?? []);
+  const fdDisplay = useDisplayPositions(wealth?.funds.positions ?? []);
+  const combinedTotal =
+    eqDisplay.filter((p) => p.valueDisplay != null).reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0) +
+    fdDisplay.filter((p) => p.valueDisplay != null).reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0);
 
   useEffect(() => {
-    Promise.all([api.summary(), api.instruments()])
-      .then(([r, i]) => {
-        setSummary(r);
+    Promise.all([api.wealth(), api.instruments(), api.funds()])
+      .then(([w, i, f]) => {
+        setWealth(w);
         setInstruments(i);
+        setFunds(f);
       })
       .catch((e: Error) => setError(e.message));
   }, []);
 
   useEffect(() => {
-    if (!active.length) {
-      if (sel !== "") setSel("");
+    if (!activeEq.length) {
+      if (eqSel !== "") setEqSel("");
       return;
     }
-    if (sel === "" || !active.some((i) => i.id === sel)) {
-      setSel(active[0].id);
-    }
-  }, [active, sel]);
+    if (eqSel === "" || !activeEq.some((i) => i.id === eqSel)) setEqSel(activeEq[0].id);
+  }, [activeEq, eqSel]);
 
   useEffect(() => {
-    if (sel === "") {
-      setVariation(null);
-      setProgress(null);
-      setTargets([]);
+    if (!activeFd.length) {
+      if (fdSel !== "") setFdSel("");
+      return;
+    }
+    if (fdSel === "" || !activeFd.some((i) => i.id === fdSel)) setFdSel(activeFd[0].id);
+  }, [activeFd, fdSel]);
+
+  useEffect(() => {
+    if (eqSel === "") {
+      setEqVariation(null);
+      setEqProgress(null);
+      setEqTargets([]);
+      return;
+    }
+    Promise.all([api.variation(Number(eqSel)), api.targetProgress(Number(eqSel)), api.targets(Number(eqSel))])
+      .then(([v, a, o]) => {
+        setEqVariation(v);
+        setEqProgress(a);
+        setEqTargets(o);
+      })
+      .catch((e: Error) => setError(e.message));
+  }, [eqSel]);
+
+  useEffect(() => {
+    if (fdSel === "") {
+      setFdVariation(null);
+      setFdProgress(null);
+      setFdTargets([]);
       return;
     }
     Promise.all([
-      api.variation(Number(sel)),
-      api.targetProgress(Number(sel)),
-      api.targets(Number(sel)),
+      api.fundVariation(Number(fdSel)),
+      api.fundTargetProgress(Number(fdSel)),
+      api.fundTargets(Number(fdSel)),
     ])
       .then(([v, a, o]) => {
-        setVariation(v);
-        setProgress(a);
-        setTargets(o);
+        setFdVariation(asVariation(v));
+        setFdProgress(asProgress(a));
+        setFdTargets(o.map(asTarget));
       })
       .catch((e: Error) => setError(e.message));
-  }, [sel]);
+  }, [fdSel]);
 
-  const displayPositions = useMemo(() => {
-    return (summary?.positions ?? []).map((p) => {
-      const last = p.last_price == null
-        ? null
-        : convertMoney(
-            Number(p.last_price),
-            asMoneyCurrency(p.instrument_currency),
-            currency,
-            p.price_year,
-            p.price_month,
-            rates,
-          );
-      const value = p.value == null
-        ? null
-        : convertMoney(
-            Number(p.value),
-            asMoneyCurrency(p.instrument_currency),
-            currency,
-            p.price_year,
-            p.price_month,
-            rates,
-          );
-      return { ...p, lastDisplay: last, valueDisplay: value };
-    });
-  }, [summary, currency, rates]);
-
-  const usdReady = displayPositions.filter((p) => p.valueDisplay != null);
-  const displayTotal = usdReady.reduce((acc, p) => acc + (p.valueDisplay ?? 0), 0);
-
-  const pieData = useMemo(
-    () =>
-      usdReady
-        .filter((p) => (p.valueDisplay ?? 0) > 0)
-        .map((p) => ({
-          name: `${p.instrument_name} · ${p.broker_name}`,
-          value: p.valueDisplay ?? 0,
-        })),
-    [usdReady],
-  );
-
-  async function reloadTarget() {
-    if (sel === "") return;
-    const [a, o] = await Promise.all([api.targetProgress(Number(sel)), api.targets(Number(sel))]);
-    setProgress(a);
-    setTargets(o);
+  async function reloadWealth() {
+    const w = await api.wealth();
+    setWealth(w);
   }
 
-  async function saveTarget(e: FormEvent) {
+  async function saveEqTarget(e: FormEvent) {
     e.preventDefault();
-    if (sel === "") return;
+    if (eqSel === "") return;
     setError(null);
     try {
       await api.upsertTarget({
-        instrument_id: Number(sel),
-        year: Number(objYear),
-        month: Number(objMonth),
-        price: Number(objPrice),
+        instrument_id: Number(eqSel),
+        year: Number(eqYear),
+        month: Number(eqMonth),
+        price: Number(eqPrice),
       });
-      setObjPrice("");
-      await reloadTarget();
+      setEqPrice("");
+      const [a, o] = await Promise.all([api.targetProgress(Number(eqSel)), api.targets(Number(eqSel))]);
+      setEqProgress(a);
+      setEqTargets(o);
+      await reloadWealth();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.error"));
     }
   }
 
-  const selectedNative = asMoneyCurrency(
-    instruments.find((i) => i.id === sel)?.currency ?? progress?.instrument_currency,
-  );
-
-  const marketDisplay = progress?.last_price == null
-    ? null
-    : convertMoney(
-        Number(progress.last_price),
-        selectedNative,
-        currency,
-        progress.price_year,
-        progress.price_month,
-        rates,
-      );
-  const targetDisplay = progress?.target == null
-    ? null
-    : convertMoney(
-        Number(progress.target),
-        selectedNative,
-        currency,
-        progress.target_year,
-        progress.target_month,
-        rates,
-      );
-
-  const barTarget = useMemo(() => {
-    if (marketDisplay == null || targetDisplay == null) return [];
-    return [
-      { name: t("summary.market"), valor: marketDisplay },
-      { name: t("summary.target"), valor: targetDisplay },
-    ];
-  }, [marketDisplay, targetDisplay, t]);
-
-  const pctProgress = progress?.progress_pct == null ? null : Number(progress.progress_pct);
-  const barPct = pctProgress == null ? 0 : Math.min(pctProgress, 100);
-
-  const lineData = useMemo(
-    () =>
-      (variation?.points ?? [])
-        .filter((p) => p.variation_pct !== null)
-        .map((p) => ({
-          periodo: `${p.year}-${String(p.month).padStart(2, "0")}`,
-          variacion: Number(p.variation_pct),
-        })),
-    [variation],
-  );
-
-  function moneyOrMissing(n: number | null, fallback: string): string {
-    if (n == null) return fallback;
-    return formatMoney(n, currency);
+  async function saveFdTarget(e: FormEvent) {
+    e.preventDefault();
+    if (fdSel === "") return;
+    setError(null);
+    try {
+      await api.upsertFundTarget({
+        fund_id: Number(fdSel),
+        year: Number(fdYear),
+        month: Number(fdMonth),
+        price: Number(fdPrice),
+      });
+      setFdPrice("");
+      const [a, o] = await Promise.all([
+        api.fundTargetProgress(Number(fdSel)),
+        api.fundTargets(Number(fdSel)),
+      ]);
+      setFdProgress(asProgress(a));
+      setFdTargets(o.map(asTarget));
+      await reloadWealth();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.error"));
+    }
   }
 
+  const eqNative = instruments.find((i) => i.id === eqSel)?.currency ?? eqProgress?.instrument_currency ?? "COP";
+  const fdNative = funds.find((i) => i.id === fdSel)?.currency ?? fdProgress?.instrument_currency ?? "COP";
+
   return (
-    <div className="space-y-6">
-      <BannerPrecios linkToPrices />
+    <div className="space-y-8">
+      <BannerPrecios linkToPrices kind="both" />
       {error && (
         <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">{error}</p>
       )}
       <section className="rounded-lg bg-surface p-5 shadow-sm">
-        <p className="text-sm uppercase tracking-wide text-muted">{t("summary.total")}</p>
-        <p className="font-display text-4xl">{formatMoney(displayTotal, currency)}</p>
+        <p className="text-sm uppercase tracking-wide text-muted">{t("summary.combined")}</p>
+        <p className="font-display text-4xl">{formatMoney(combinedTotal, currency)}</p>
       </section>
-      <section className="overflow-x-auto rounded-lg bg-surface p-4 shadow-sm">
-        <h2 className="font-display text-xl">{t("summary.positions")}</h2>
-        <table className="mt-3 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-muted">
-              <th className="py-2">{t("summary.instrument")}</th>
-              <th>{t("summary.broker")}</th>
-              <th className="text-right">{t("summary.balance")}</th>
-              <th className="text-right">{t("summary.lastPrice")}</th>
-              <th className="text-right">{t("summary.value")}</th>
-              <th className="text-right">{t("summary.weight")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayPositions.map((p) => {
-              const weight =
-                p.valueDisplay == null || displayTotal === 0
-                  ? null
-                  : (p.valueDisplay / displayTotal) * 100;
-              return (
-                <tr key={`${p.instrument_id}-${p.broker_id}`} className="border-b border-line">
-                  <td className="py-2">
-                    {p.instrument_name}{" "}
-                    <span className="text-xs text-muted">{p.instrument_currency}</span>
-                  </td>
-                  <td>{p.broker_name}</td>
-                  <td className="text-right">{formatNumber(Number(p.balance))}</td>
-                  <td className="text-right">
-                    {p.missing_price
-                      ? t("summary.noPrice")
-                      : moneyOrMissing(p.lastDisplay, t("fx.missing"))}
-                  </td>
-                  <td className="text-right">
-                    {p.missing_price
-                      ? t("common.dash")
-                      : moneyOrMissing(p.valueDisplay, t("fx.missing"))}
-                  </td>
-                  <td className="text-right">
-                    {weight == null
-                      ? t("common.dash")
-                      : `${formatNumber(weight, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-lg bg-surface p-4 shadow-sm">
-          <h2 className="font-display text-xl">{t("summary.pieTitle")}</h2>
-          {pieData.length === 0 ? (
-            <p className="mt-6 text-sm text-muted">{t("summary.pieEmpty")}</p>
-          ) : (
-            <div className="h-72">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={90}
-                    labelLine={{ stroke: CHART.tick }}
-                    label={({ percent }: { percent?: number }) =>
-                      `${formatNumber((percent ?? 0) * 100, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}%`
-                    }
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={CHART.colors[i % CHART.colors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v: number) => formatMoney(v, currency)}
-                    {...CHART.tooltip}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
-        <section className="rounded-lg bg-surface p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-display text-xl">{t("summary.variationTitle")}</h2>
-            <select
-              className="rounded border border-line px-2 py-1 text-sm"
-              value={sel}
-              onChange={(e) => setSel(Number(e.target.value))}
-              disabled={active.length === 0}
-            >
-              {active.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {lineData.length === 0 ? (
-            <p className="mt-6 text-sm text-muted">{t("summary.variationEmpty")}</p>
-          ) : (
-            <div className="h-72">
-              <ResponsiveContainer>
-                <LineChart data={lineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
-                  <XAxis dataKey="periodo" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
-                  <YAxis unit="%" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
-                  <Tooltip {...CHART.tooltip} />
-                  <Line type="monotone" dataKey="variacion" stroke={CHART.series} dot />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </section>
-      </div>
-      <section className="rounded-lg bg-surface p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-xl">{t("summary.targetTitle")}</h2>
-          <select
-            className="rounded border border-line px-2 py-1 text-sm"
-            value={sel}
-            onChange={(e) => setSel(Number(e.target.value))}
-            disabled={active.length === 0}
-          >
-            {active.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <form onSubmit={saveTarget} className="mt-4 grid gap-3 sm:grid-cols-4">
-          <label className="text-sm">
-            {t("common.year")}
-            <input
-              className="mt-1 w-full rounded border border-line px-2 py-2"
-              type="number"
-              value={objYear}
-              onChange={(e) => setObjYear(e.target.value)}
-              required
-            />
-          </label>
-          <label className="text-sm">
-            {t("common.month")}
-            <input
-              className="mt-1 w-full rounded border border-line px-2 py-2"
-              type="number"
-              min={1}
-              max={12}
-              value={objMonth}
-              onChange={(e) => setObjMonth(e.target.value)}
-              required
-            />
-          </label>
-          <label className="text-sm">
-            {t("summary.targetPrice", { currency: selectedNative })}
-            <input
-              className="mt-1 w-full rounded border border-line px-2 py-2"
-              type="number"
-              min={0.0001}
-              step="any"
-              value={objPrice}
-              onChange={(e) => setObjPrice(e.target.value)}
-              required
-            />
-          </label>
-          <div className="flex items-end">
-            <button className="rounded bg-accent px-4 py-2 text-sm text-white" type="submit" disabled={sel === ""}>
-              {t("summary.saveTarget")}
-            </button>
-          </div>
-        </form>
-        {pctProgress == null ? (
-          <p className="mt-4 text-sm text-muted">{t("summary.targetEmpty")}</p>
-        ) : (
-          <div className="mt-4 grid gap-6 lg:grid-cols-2">
-            <div>
-              <p className="text-sm text-muted">{t("summary.targetVs")}</p>
-              <p className="font-display text-3xl">{pctProgress.toFixed(1)}%</p>
-              <p className="mt-1 text-sm text-muted">
-                {moneyOrMissing(marketDisplay, t("fx.missing"))} / {moneyOrMissing(targetDisplay, t("fx.missing"))}
-              </p>
-              <div className="mt-3 h-3 overflow-hidden rounded bg-surface-2">
-                <div className="h-full bg-accent" style={{ width: `${barPct}%` }} />
-              </div>
-            </div>
-            {barTarget.length > 0 && (
-              <div className="h-48">
-                <ResponsiveContainer>
-                  <BarChart data={barTarget}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
-                    <XAxis dataKey="name" tick={{ fill: CHART.tick }} stroke={CHART.grid} />
-                    <YAxis tick={{ fill: CHART.tick }} stroke={CHART.grid} />
-                    <Tooltip formatter={(v: number) => formatMoney(v, currency)} {...CHART.tooltip} />
-                    <Bar dataKey="valor" fill={CHART.series} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        )}
-        {targets.length > 0 && (
-          <table className="mt-6 w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-muted">
-                <th className="py-2">{t("summary.period")}</th>
-                <th className="text-right">{t("summary.target")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {targets.map((o) => {
-                const shown = convertMoney(
-                  Number(o.price),
-                  asMoneyCurrency(o.instrument_currency ?? selectedNative),
-                  currency,
-                  o.year,
-                  o.month,
-                  rates,
-                );
-                return (
-                  <tr key={o.id} className="border-b border-line">
-                    <td className="py-2">
-                      {o.year}-{String(o.month).padStart(2, "0")}
-                    </td>
-                    <td className="text-right">
-                      {shown == null ? t("fx.missing") : formatMoney(shown, currency)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <PortfolioBlock
+        title={t("summary.equities")}
+        labels={{
+          positions: t("summary.positions"),
+          instrument: t("summary.instrument"),
+          broker: t("summary.broker"),
+          lastPrice: t("summary.lastPrice"),
+          noPrice: t("summary.noPrice"),
+          pieTitle: t("summary.pieTitle"),
+          pieEmpty: t("summary.pieEmpty"),
+          variationTitle: t("summary.variationTitle"),
+          variationEmpty: t("summary.variationEmpty"),
+          targetTitle: t("summary.targetTitle"),
+          targetPrice: t("summary.targetPrice", { currency: eqNative }),
+          saveTarget: t("summary.saveTarget"),
+          targetEmpty: t("summary.targetEmpty"),
+          targetVs: t("summary.targetVs"),
+        }}
+        positions={wealth?.equities.positions ?? []}
+        items={instruments}
+        selectedId={eqSel}
+        onSelect={setEqSel}
+        variation={eqVariation}
+        progress={eqProgress}
+        targets={eqTargets}
+        objYear={eqYear}
+        objMonth={eqMonth}
+        objPrice={eqPrice}
+        onObjYear={setEqYear}
+        onObjMonth={setEqMonth}
+        onObjPrice={setEqPrice}
+        onSaveTarget={saveEqTarget}
+      />
+      <PortfolioBlock
+        title={t("summary.funds")}
+        labels={{
+          positions: t("funds.summary.positions"),
+          instrument: t("funds.summary.fund"),
+          broker: t("funds.summary.fiduciary"),
+          lastPrice: t("funds.summary.lastValue"),
+          noPrice: t("funds.summary.noValue"),
+          pieTitle: t("funds.summary.pieTitle"),
+          pieEmpty: t("funds.summary.pieEmpty"),
+          variationTitle: t("funds.summary.variationTitle"),
+          variationEmpty: t("funds.summary.variationEmpty"),
+          targetTitle: t("funds.summary.targetTitle"),
+          targetPrice: t("funds.summary.targetPrice", { currency: fdNative }),
+          saveTarget: t("funds.summary.saveTarget"),
+          targetEmpty: t("funds.summary.targetEmpty"),
+          targetVs: t("funds.summary.targetVs"),
+        }}
+        positions={wealth?.funds.positions ?? []}
+        items={funds}
+        selectedId={fdSel}
+        onSelect={setFdSel}
+        variation={fdVariation}
+        progress={fdProgress}
+        targets={fdTargets}
+        objYear={fdYear}
+        objMonth={fdMonth}
+        objPrice={fdPrice}
+        onObjYear={setFdYear}
+        onObjMonth={setFdMonth}
+        onObjPrice={setFdPrice}
+        onSaveTarget={saveFdTarget}
+      />
     </div>
   );
 }

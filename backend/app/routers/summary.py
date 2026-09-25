@@ -44,8 +44,7 @@ def balances(db: Session = Depends(get_db)) -> list[BalanceOut]:
     return out
 
 
-@router.get("/summary", response_model=SummaryOut)
-def summary(db: Session = Depends(get_db)) -> SummaryOut:
+def build_equity_summary(db: Session) -> SummaryOut:
     pairs = db.execute(select(Trade.instrument_id, Trade.broker_id).distinct()).all()
     prices_by_inst: dict[int, list[MonthlyPrice]] = defaultdict(list)
     for p in db.scalars(select(MonthlyPrice)).all():
@@ -89,6 +88,11 @@ def summary(db: Session = Depends(get_db)) -> SummaryOut:
 
     positions.sort(key=lambda r: (-float(r.value or 0), r.instrument_name))
     return SummaryOut(total=total, positions=positions)
+
+
+@router.get("/summary", response_model=SummaryOut)
+def summary(db: Session = Depends(get_db)) -> SummaryOut:
+    return build_equity_summary(db)
 
 
 @router.get("/price-variation", response_model=VariationOut)

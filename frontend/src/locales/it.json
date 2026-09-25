@@ -5,7 +5,10 @@
     "prices": "Prezzi",
     "trades": "Movimenti",
     "catalog": "Catalogo",
-    "fx": "TRM"
+    "fx": "TRM",
+    "equities": "Azioni",
+    "funds": "Fondi",
+    "module": "Modulo"
   },
   "lang": { "label": "Lingua", "es": "Español", "en": "English", "it": "Italiano" },
   "currency": { "label": "Valuta", "cop": "COP", "usd": "USD" },
@@ -40,7 +43,10 @@
   "banner": {
     "one": "Manca 1 prezzo di {{month}} ({{total}} titoli attivi).",
     "many": "Mancano {{count}} prezzi di {{month}} ({{total}} titoli attivi).",
-    "load": "Carica in Prezzi"
+    "load": "Carica in Prezzi",
+    "fundsOne": "Manca 1 valore unitario di {{month}} ({{total}} fondi attivi).",
+    "fundsMany": "Mancano {{count}} valori unitari di {{month}} ({{total}} fondi attivi).",
+    "fundsLoad": "Carica in Fondi"
   },
   "catalog": {
     "instruments": "Titoli",
@@ -67,6 +73,9 @@
     "saved": "Prezzi salvati"
   },
   "summary": {
+    "combined": "Totale combinato (azioni + fondi)",
+    "equities": "Azioni",
+    "funds": "Fondi",
     "total": "Totale attuale (titoli attivi)",
     "positions": "Posizioni",
     "instrument": "Titolo",
@@ -110,6 +119,62 @@
     "cannotDeleteInstrument": "Impossibile eliminare: questo titolo ha movimenti, prezzi o obiettivi",
     "cannotDeleteTrade": "Impossibile eliminare: il saldo del broker diventerebbe negativo",
     "sellExceedsBalance": "La vendita supera il saldo di questo broker",
-    "cannotChangeCurrency": "Impossibile cambiare valuta: il titolo ha già movimenti, prezzi o obiettivi"
+    "cannotChangeCurrency": "Impossibile cambiare valuta: il titolo ha già movimenti, prezzi o obiettivi",
+    "fiduciaryNotFound": "Fiduciaria non trovata",
+    "fundNotFound": "Fondo non trovato",
+    "fundTradeNotFound": "Movimento del fondo non trovato",
+    "fundTargetNotFound": "Obiettivo del fondo non trovato",
+    "unitValueNotFound": "Valore unitario non trovato",
+    "fiduciaryExists": "Esiste già una fiduciaria con questo nome",
+    "fundExists": "Esiste già un fondo con questo nome",
+    "cannotInactivateFund": "Impossibile disattivare: il fondo ha ancora un saldo di unità maggiore di 0",
+    "cannotSubscribeInactive": "Impossibile sottoscrivere un fondo inattivo; attivarlo prima",
+    "cannotDeleteFiduciary": "Impossibile eliminare: ci sono movimenti con questa fiduciaria",
+    "cannotDeleteFund": "Impossibile eliminare: questo fondo ha movimenti, valori o obiettivi",
+    "cannotDeleteFundTrade": "Impossibile eliminare: il saldo della fiduciaria diventerebbe negativo",
+    "redeemExceedsBalance": "Il riscatto supera il saldo di questa fiduciaria",
+    "cannotChangeFundCurrency": "Impossibile cambiare valuta: il fondo ha già movimenti, valori o obiettivi"
+  },
+  "funds": {
+    "catalog": {
+      "funds": "Fondi",
+      "fiduciaries": "Fiduciarie",
+      "currency": "Valuta del fondo"
+    },
+    "trades": {
+      "register": "Registra una sottoscrizione o un riscatto",
+      "edit": "Modifica movimento",
+      "history": "Storico",
+      "fund": "Fondo",
+      "fiduciary": "Fiduciaria",
+      "type": "Tipo",
+      "subscribe": "Sottoscrizione",
+      "redeem": "Riscatto",
+      "quantity": "Unità",
+      "price": "Valore unitario ({{currency}})",
+      "amount": "Totale ({{currency}})",
+      "commission": "Commissione ({{currency}})",
+      "confirmDelete": "Eliminare {{type}} di {{fund}} presso {{fiduciary}}?"
+    },
+    "prices": {
+      "fund": "Fondo",
+      "saved": "Valori unitari salvati"
+    },
+    "summary": {
+      "positions": "Posizioni",
+      "fund": "Fondo",
+      "fiduciary": "Fiduciaria",
+      "lastValue": "Ultimo valore unitario",
+      "noValue": "senza valore",
+      "pieTitle": "Peso % tra i fondi",
+      "pieEmpty": "Non ci sono valori unitari da graficare.",
+      "variationTitle": "Variazione % del valore unitario",
+      "variationEmpty": "Manca il mese calendario precedente; il punto non viene inventato.",
+      "targetTitle": "Avanzamento verso il valore obiettivo",
+      "targetPrice": "Valore obiettivo ({{currency}})",
+      "saveTarget": "Salva obiettivo",
+      "targetEmpty": "Manca il valore unitario o l'obiettivo vigente; l'avanzamento non viene inventato.",
+      "targetVs": "Ultimo valore vs obiettivo vigente"
+    }
   }
 }

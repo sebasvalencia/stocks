@@ -4,7 +4,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estados Unidos (USD). Se cargan a mano las compras, las ventas, la comisión de cada operación, el precio de mercado mes a mes y el precio objetivo de venta por título. El saldo, el valor actual, los porcentajes y el avance al objetivo se calculan; no se guardan duplicados.
+Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estados Unidos (USD), más fondos colectivos (FIC) en la misma app. Se cargan a mano las compras, las ventas, las suscripciones, los rescates, la comisión de cada operación, el precio o valor de unidad mes a mes y el objetivo de venta. El saldo, el valor actual, los porcentajes y el avance al objetivo se calculan; no se guardan duplicados.
 
 ## Características
 
@@ -19,7 +19,9 @@ Registro y seguimiento de un portafolio de acciones de Colombia (COP) y de Estad
 - **Gráficas**: peso % del portafolio (torta), variación % mensual del precio (línea) y **avance al objetivo** (`último mercado / objetivo vigente`). Un mes hueco no inventa variación ni avance.
 - **Tema, idioma y moneda de pantalla**: selects compactos en el header (oscuro / claro, ES / EN / IT, COP / USD). La preferencia se guarda en `localStorage`. Los nombres de títulos y corredores no se traducen.
 - **Moneda del título vs vista**: precios de mercado, objetivos, precio del movimiento y comisión se guardan en la moneda del título. El toggle COP / USD del header convierte con la TRM de ese mes (`cop_per_usd`). Si la vista es la misma moneda, no hace falta tasa. Si falta la TRM para un monto cruzado, se muestra “sin TRM”; no se inventa.
-- **Seed** inicial: 11 títulos (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), todos **COP**, y 2 corredores (D Corredores, Trii).
+- **Fondos (FIC)**: catálogo aparte de fondos y fiduciarias (no son corredores). Suscripciones y rescates por par fondo + fiduciaria; **valor de unidad** mensual (no se escribe desde el movimiento); objetivo por fondo. Mismas reglas que acciones: no rescatar de más, no suscribir un fondo inactivo, no inactivar con unidades > 0.
+- **Resumen combinado**: `GET /wealth` suma el total de acciones y el de fondos. La UI muestra un total combinado y dos bloques (peso %, variación del valor de unidad y avance a objetivo por módulo). Los ETF de bolsa siguen como títulos; los FIC no reutilizan `trade` ni `broker`.
+- **Seed** inicial: 11 títulos (Ecopetrol, Celsia, ETB, GEB, Mineros, PG Argos, PG SURA, Cemagros, PF Cemagros, Grupo Argos, Grupo Sura), todos **COP**, y 2 corredores (D Corredores, Trii). El catálogo FIC arranca vacío.
 
 
 
@@ -46,6 +48,10 @@ Portafolio ficticio en `demo/demo.sql`. Para levantarlo en local, ver [Probar co
 | Avance al objetivo                                     | Solo si hay precio de mercado **y** objetivo vigente                 |
 | Precios pendientes del mes                             | Solo títulos **activos** sin celda en el mes en curso                |
 | Vista cruzada sin TRM de ese mes                       | No se convierte; se muestra “sin TRM”                                |
+| Rescate mayor al saldo del par fondo+fiduciaria        | Error 400                                                            |
+| Inactivar un fondo con unidades > 0                    | Error 400                                                            |
+| Precio de operación o comisión del FIC                 | Se guarda en el movimiento; no escribe `fund_unit_value` ni cambia el total |
+| Patrimonio combinado                                   | Total de acciones + total de fondos (solo filas activas con precio / valor) |
 
 
 Moneda persistida: **COP o USD por título**. El toggle del header es solo presentación: `monto_usd = monto_cop / cop_per_usd` y `monto_cop = monto_usd × cop_per_usd` con la TRM **de ese mes**.
@@ -179,28 +185,29 @@ acciones/
 │   ├── pyproject.toml
 │   ├── uv.lock
 │   ├── alembic.ini
-│   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo, 003 inglés, 004 TRM, 005 moneda, 006 precio
-│   ├── app/
-│   │   ├── main.py              # FastAPI, CORS, /health
-│   │   ├── config.py            # DATABASE_URL (sin default; sale del entorno)
-│   │   ├── database.py          # engine, sesión, Base
-│   │   ├── models.py            # ORM 3FN (inglés)
-│   │   ├── schemas.py           # Pydantic de entrada/salida
-│   │   ├── seed.py              # 11 títulos + 2 corredores (solo si el catálogo está vacío)
-│   │   ├── seed_demo.py         # portafolio ficticio del README
-│   │   ├── routers/             # brokers, instruments, trades, prices, targets, summary, fx
-│   │   └── services/            # rules, balances, variation, target
-│   └── tests/
-└── frontend/
+    │   ├── alembic/versions/        # 001 3FN, 002 comisión + objetivo, 003 inglés, 004 TRM, 005 moneda, 006 precio, 007 fondos
+    │   ├── app/
+    │   │   ├── main.py              # FastAPI, CORS, /health, /wealth
+    │   │   ├── config.py            # DATABASE_URL (sin default; sale del entorno)
+    │   │   ├── database.py          # engine, sesión, Base
+    │   │   ├── models.py            # ORM 3FN (inglés) + import de modelos FIC
+    │   │   ├── schemas.py           # Pydantic de entrada/salida
+    │   │   ├── seed.py              # 11 títulos + 2 corredores (solo si el catálogo está vacío)
+    │   │   ├── seed_demo.py         # portafolio ficticio del README
+    │   │   ├── routers/             # brokers, instruments, trades, prices, targets, summary, fx, wealth
+    │   │   ├── services/            # rules, balances, variation, target
+    │   │   └── funds/               # modelos, schemas, routers y servicios FIC
+    │   └── tests/
+    └── frontend/
     ├── Dockerfile
     ├── src/
     │   ├── main.tsx
-    │   ├── App.tsx              # rutas, tema, idioma y COP/USD
+    │   ├── App.tsx              # rutas, conmutador Acciones/Fondos, tema, idioma y COP/USD
     │   ├── api.ts               # cliente HTTP
     │   ├── i18n.ts              # es / en / it
     │   ├── theme.tsx            # oscuro / claro
-    │   ├── BannerPrecios.tsx    # aviso de huecos del mes en curso
-    │   └── pages/               # Summary, Prices, Trades, Catalog, FxRates
+    │   ├── BannerPrecios.tsx    # aviso de huecos de precio / valor de unidad
+    │   └── pages/               # Summary, Prices, Trades, Catalog, FxRates, funds/
     └── ...
 ```
 
@@ -256,6 +263,46 @@ erDiagram
   INSTRUMENT ||--o{ TRADE : records
   INSTRUMENT ||--o{ MONTHLY_PRICE : quotes
   INSTRUMENT ||--o{ PRICE_TARGET : targets
+  FIDUCIARY {
+    int id PK
+    varchar name UK
+  }
+  FUND {
+    int id PK
+    varchar name UK
+    boolean active
+    varchar currency "COP | USD"
+  }
+  FUND_TRADE {
+    int id PK
+    int fund_id FK
+    int fiduciary_id FK
+    varchar type "subscribe | redeem"
+    smallint year
+    smallint month "nullable 1-12"
+    numeric quantity "> 0"
+    numeric price "nullable > 0 moneda del fondo"
+    numeric commission ">= 0 moneda del fondo"
+  }
+  FUND_UNIT_VALUE {
+    int id PK
+    int fund_id FK
+    smallint year
+    smallint month "1-12"
+    numeric value "> 0"
+  }
+  FUND_TARGET {
+    int id PK
+    int fund_id FK
+    smallint year
+    smallint month "1-12"
+    numeric price "> 0"
+  }
+
+  FIDUCIARY ||--o{ FUND_TRADE : records
+  FUND ||--o{ FUND_TRADE : records
+  FUND ||--o{ FUND_UNIT_VALUE : quotes
+  FUND ||--o{ FUND_TARGET : targets
 ```
 
 
@@ -267,6 +314,10 @@ Restricciones:
 - `monthly_price` y `price_target` únicos por (`instrument_id`, `year`, `month`); `price > 0`.
 - `fx_rate` único por (`year`, `month`); `cop_per_usd > 0`.
 - FKs: `trade` → `instrument` y `broker`; `monthly_price` y `price_target` → `instrument`.
+- `fund.currency` ∈ `{COP, USD}` (default COP).
+- `fund_trade.type` ∈ `{subscribe, redeem}`; `quantity > 0`; `commission >= 0`; `price` nulo o `> 0`.
+- `fund_unit_value` y `fund_target` únicos por (`fund_id`, `year`, `month`).
+- FKs: `fund_trade` → `fund` y `fiduciary`; `fund_unit_value` y `fund_target` → `fund`.
 
 Por qué es 3FN: cada atributo no clave depende solo de la PK. No se copia el nombre del título en trade, precio ni objetivo. El saldo, el avance y la conversión COP/USD de pantalla se obtienen de consultas.
 
@@ -328,6 +379,40 @@ classDiagram
   Instrument "1" --> "*" Trade : trades
   Instrument "1" --> "*" MonthlyPrice : prices
   Instrument "1" --> "*" PriceTarget : targets
+  class Fiduciary {
+    +int id
+    +str name
+  }
+  class Fund {
+    +int id
+    +str name
+    +bool active
+    +str currency
+  }
+  class FundTrade {
+    +int id
+    +int fund_id
+    +int fiduciary_id
+    +str type
+    +Decimal quantity
+    +Decimal price
+    +Decimal commission
+  }
+  class FundUnitValue {
+    +int id
+    +int fund_id
+    +Decimal value
+  }
+  class FundTarget {
+    +int id
+    +int fund_id
+    +Decimal price
+  }
+
+  Fiduciary "1" --> "*" FundTrade : trades
+  Fund "1" --> "*" FundTrade : trades
+  Fund "1" --> "*" FundUnitValue : unit_values
+  Fund "1" --> "*" FundTarget : targets
 ```
 
 

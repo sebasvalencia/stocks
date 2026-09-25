@@ -5,7 +5,10 @@
     "prices": "Precios",
     "trades": "Movimientos",
     "catalog": "Catálogo",
-    "fx": "TRM"
+    "fx": "TRM",
+    "equities": "Acciones",
+    "funds": "Fondos",
+    "module": "Módulo"
   },
   "lang": { "label": "Idioma", "es": "Español", "en": "English", "it": "Italiano" },
   "currency": { "label": "Moneda", "cop": "COP", "usd": "USD" },
@@ -40,7 +43,10 @@
   "banner": {
     "one": "Falta 1 precio de {{month}} ({{total}} títulos activos).",
     "many": "Faltan {{count}} precios de {{month}} ({{total}} títulos activos).",
-    "load": "Cargar en Precios"
+    "load": "Cargar en Precios",
+    "fundsOne": "Falta 1 valor de unidad de {{month}} ({{total}} fondos activos).",
+    "fundsMany": "Faltan {{count}} valores de unidad de {{month}} ({{total}} fondos activos).",
+    "fundsLoad": "Cargar en Fondos"
   },
   "catalog": {
     "instruments": "Títulos",
@@ -67,6 +73,9 @@
     "saved": "Precios guardados"
   },
   "summary": {
+    "combined": "Total combinado (acciones + fondos)",
+    "equities": "Acciones",
+    "funds": "Fondos",
     "total": "Total actual (títulos activos)",
     "positions": "Posiciones",
     "instrument": "Título",
@@ -110,6 +119,62 @@
     "cannotDeleteInstrument": "No se puede borrar: hay movimientos, precios u objetivos de este título",
     "cannotDeleteTrade": "No se puede borrar: el saldo del corredor quedaría negativo",
     "sellExceedsBalance": "La venta supera el saldo de este corredor",
-    "cannotChangeCurrency": "No se puede cambiar la moneda: el título ya tiene movimientos, precios u objetivos"
+    "cannotChangeCurrency": "No se puede cambiar la moneda: el título ya tiene movimientos, precios u objetivos",
+    "fiduciaryNotFound": "Fiduciaria no encontrada",
+    "fundNotFound": "Fondo no encontrado",
+    "fundTradeNotFound": "Movimiento de fondo no encontrado",
+    "fundTargetNotFound": "Objetivo de fondo no encontrado",
+    "unitValueNotFound": "Valor de unidad no encontrado",
+    "fiduciaryExists": "Ya existe una fiduciaria con ese nombre",
+    "fundExists": "Ya existe un fondo con ese nombre",
+    "cannotInactivateFund": "No se puede inactivar: el fondo todavía tiene unidades mayores a 0",
+    "cannotSubscribeInactive": "No se puede suscribir un fondo inactivo; actívelo primero",
+    "cannotDeleteFiduciary": "No se puede borrar: hay movimientos con esta fiduciaria",
+    "cannotDeleteFund": "No se puede borrar: hay movimientos, valores u objetivos de este fondo",
+    "cannotDeleteFundTrade": "No se puede borrar: el saldo de la fiduciaria quedaría negativo",
+    "redeemExceedsBalance": "El rescate supera el saldo de esta fiduciaria",
+    "cannotChangeFundCurrency": "No se puede cambiar la moneda: el fondo ya tiene movimientos, valores u objetivos"
+  },
+  "funds": {
+    "catalog": {
+      "funds": "Fondos",
+      "fiduciaries": "Fiduciarias",
+      "currency": "Moneda del fondo"
+    },
+    "trades": {
+      "register": "Registrar suscripción o rescate",
+      "edit": "Editar movimiento",
+      "history": "Historial",
+      "fund": "Fondo",
+      "fiduciary": "Fiduciaria",
+      "type": "Tipo",
+      "subscribe": "Suscripción",
+      "redeem": "Rescate",
+      "quantity": "Unidades",
+      "price": "Valor de unidad ({{currency}})",
+      "amount": "Total ({{currency}})",
+      "commission": "Comisión ({{currency}})",
+      "confirmDelete": "¿Borrar {{type}} de {{fund}} en {{fiduciary}}?"
+    },
+    "prices": {
+      "fund": "Fondo",
+      "saved": "Valores de unidad guardados"
+    },
+    "summary": {
+      "positions": "Posiciones",
+      "fund": "Fondo",
+      "fiduciary": "Fiduciaria",
+      "lastValue": "Último valor de unidad",
+      "noValue": "sin valor",
+      "pieTitle": "Peso % entre fondos",
+      "pieEmpty": "No hay valores de unidad para graficar.",
+      "variationTitle": "Variación % del valor de unidad",
+      "variationEmpty": "Falta el mes calendario anterior; no se inventa el punto.",
+      "targetTitle": "Avance al valor objetivo",
+      "targetPrice": "Valor objetivo ({{currency}})",
+      "saveTarget": "Guardar objetivo",
+      "targetEmpty": "Falta el valor de unidad o el objetivo vigente; no se inventa el avance.",
+      "targetVs": "Último valor vs objetivo vigente"
+    }
   }
 }

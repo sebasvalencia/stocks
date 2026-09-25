@@ -112,3 +112,6 @@ class FxRate(Base):
     year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     month: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     cop_per_usd: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+
+
+from app.funds.models import Fiduciary, Fund, FundTarget, FundTrade, FundUnitValue  # noqa: E402, F401

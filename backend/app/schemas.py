@@ -136,6 +136,12 @@ class SummaryOut(BaseModel):
     positions: list[PositionOut]
 
 
+class WealthOut(BaseModel):
+    equities: SummaryOut
+    funds: SummaryOut
+    total: VisibleDecimal
+
+
 class TargetIn(BaseModel):
     instrument_id: int
     year: int = Field(ge=1900, le=2100)
